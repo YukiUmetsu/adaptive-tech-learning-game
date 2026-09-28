@@ -56,6 +56,7 @@ function baseProfile(): CyberProfile {
     operations_unlocked: false,
     confrontation_available: false,
     available_adversaries: [],
+    cosmetics: [],
   };
 }
 

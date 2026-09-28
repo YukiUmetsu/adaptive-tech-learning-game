@@ -6,11 +6,13 @@ use uuid::Uuid;
 
 use crate::auth::AuthenticatedUser;
 use crate::dto::{
-    CyberCampaignCompleteRequest, CyberCampaignCompleteResponse, CyberDefenseProfileResponse,
-    CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, CyberHeroProgressDto,
-    CyberHeroTalentRequest, CyberOperationCompleteRequest, CyberOperationCompleteResponse,
-    CyberOperationLoadoutRequest, CyberOperationRunDto, CyberOperationStartRequest,
-    CyberTowerUpgradePurchaseRequest, CyberTowerUpgradePurchaseResponse,
+    CyberCampaignCompleteRequest, CyberCampaignCompleteResponse, CyberCosmeticEquipRequest,
+    CyberCosmeticPurchaseRequest, CyberCosmeticPurchaseResponse, CyberCosmeticsStateDto,
+    CyberDefenseProfileResponse, CyberHeroProgressDto, CyberHeroTalentRequest,
+    CyberOperationCompleteRequest, CyberOperationCompleteResponse, CyberOperationLoadoutRequest,
+    CyberOperationOffersRequest, CyberOperationOffersResponse, CyberOperationRunDto,
+    CyberOperationStartRequest, CyberTowerUpgradePurchaseRequest,
+    CyberTowerUpgradePurchaseResponse,
 };
 use crate::dto::{CyberLegacyImportRequest, CyberLegacyImportResponse};
 use crate::dto::{CyberTelemetryRequest, CyberTelemetryResponse};
@@ -18,36 +20,6 @@ use crate::error::{ApiError, ErrorResponse};
 use crate::routes::{json_body, uuid_path};
 use crate::services;
 use crate::state::AppState;
-
-/// Debits Bits for one Cyber Defense control upgrade.
-///
-/// The wallet is taken from the verified token, so an anonymous caller is
-/// rejected: spending is an account-scoped, server-authoritative action. The
-/// client sends the action's primitives and an idempotency `event_id`; the
-/// server derives the cost and settles the debit exactly once.
-#[utoipa::path(
-    post,
-    path = "/v1/cyber-defense/upgrades",
-    tag = "cyber-defense",
-    request_body = CyberDefenseUpgradeRequest,
-    responses(
-        (status = 200, description = "Bits debited; settled balance returned", body = CyberDefenseUpgradeResponse),
-        (status = 400, description = "Malformed request or invalid upgrade", body = ErrorResponse),
-        (status = 401, description = "Authentication required", body = ErrorResponse),
-        (status = 409, description = "Insufficient Bits, an out-of-sequence upgrade level, or a reused idempotency key", body = ErrorResponse)
-    ),
-    security(("bearerAuth" = []))
-)]
-pub async fn spend_upgrade(
-    State(state): State<AppState>,
-    user: AuthenticatedUser,
-    body: Result<Json<CyberDefenseUpgradeRequest>, JsonRejection>,
-) -> Result<Json<CyberDefenseUpgradeResponse>, ApiError> {
-    let request = json_body(body)?;
-    Ok(Json(
-        services::cyber_defense_upgrade(&state, &user, request).await?,
-    ))
-}
 
 /// Returns the authenticated player's complete Cyber Defense profile.
 ///
@@ -126,6 +98,57 @@ pub async fn purchase_tower_upgrade(
     ))
 }
 
+/// Purchases a permanent Tower theme cosmetic with Bits.
+#[utoipa::path(
+    post,
+    path = "/v1/cyber-defense/cosmetics/{cosmetic_id}/purchase",
+    tag = "cyber-defense",
+    params(("cosmetic_id" = String, Path, description = "Cosmetic identifier")),
+    request_body = CyberCosmeticPurchaseRequest,
+    responses(
+        (status = 200, description = "Cosmetic purchased", body = CyberCosmeticPurchaseResponse),
+        (status = 400, description = "Unknown cosmetic or malformed request", body = ErrorResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse),
+        (status = 409, description = "Insufficient Bits or reused idempotency key", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn purchase_cosmetic(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    Path(cosmetic_id): Path<String>,
+    body: Result<Json<CyberCosmeticPurchaseRequest>, JsonRejection>,
+) -> Result<Json<CyberCosmeticPurchaseResponse>, ApiError> {
+    let request = json_body(body)?;
+    Ok(Json(
+        services::cyber_defense_purchase_cosmetic(&state, &user, &cosmetic_id, request).await?,
+    ))
+}
+
+/// Equips (or clears) an owned Tower theme.
+#[utoipa::path(
+    put,
+    path = "/v1/cyber-defense/cosmetics/equipped",
+    tag = "cyber-defense",
+    request_body = CyberCosmeticEquipRequest,
+    responses(
+        (status = 200, description = "Equipped theme updated", body = CyberCosmeticsStateDto),
+        (status = 400, description = "Theme is not owned", body = ErrorResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn equip_cosmetic(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    body: Result<Json<CyberCosmeticEquipRequest>, JsonRejection>,
+) -> Result<Json<CyberCosmeticsStateDto>, ApiError> {
+    let request = json_body(body)?;
+    Ok(Json(
+        services::cyber_defense_equip_cosmetic(&state, &user, request).await?,
+    ))
+}
+
 /// Replaces a hero's selected talents (free respec in Stage 2).
 #[utoipa::path(
     put,
@@ -153,6 +176,34 @@ pub async fn set_hero_talents(
     ))
 }
 
+/// Returns the current stable set of Operation offers.
+///
+/// Offers are persisted server-side and reused until they expire or are
+/// consumed, so the dashboard does not regenerate a different set on every
+/// render. A client can only start a template the server actually offered.
+#[utoipa::path(
+    post,
+    path = "/v1/cyber-defense/operations/offers",
+    tag = "cyber-defense",
+    request_body = CyberOperationOffersRequest,
+    responses(
+        (status = 200, description = "Operation offers", body = CyberOperationOffersResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse),
+        (status = 403, description = "Operations are locked", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn operation_offers(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    body: Result<Json<CyberOperationOffersRequest>, JsonRejection>,
+) -> Result<Json<CyberOperationOffersResponse>, ApiError> {
+    let request = json_body(body)?;
+    Ok(Json(
+        services::cyber_defense_operation_offers(&state, &user, request).await?,
+    ))
+}
+
 /// Starts one repeatable Operation.
 #[utoipa::path(
     post,
@@ -161,7 +212,7 @@ pub async fn set_hero_talents(
     request_body = CyberOperationStartRequest,
     responses(
         (status = 200, description = "Operation started", body = CyberOperationRunDto),
-        (status = 400, description = "Locked Threat Level, unknown hero, or unknown template", body = ErrorResponse),
+        (status = 400, description = "Locked Threat Level, unknown hero, invalid offer, or unknown template", body = ErrorResponse),
         (status = 401, description = "Authentication required", body = ErrorResponse),
         (status = 409, description = "An active Operation already exists", body = ErrorResponse)
     ),

@@ -258,36 +258,6 @@ pub struct WalletResponse {
     pub bits_balance: i64,
 }
 
-/// Request to debit Bits for one Cyber Defense control upgrade.
-///
-/// The client sends only the action's primitives: the server derives the
-/// control's level from its own settled ledger, computes the canonical cost from
-/// policy, and never trusts a client-supplied amount. `event_id` is the
-/// idempotency key, so a retry after a timeout cannot debit twice.
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct CyberDefenseUpgradeRequest {
-    /// Client-generated idempotency key for this upgrade action.
-    pub event_id: Uuid,
-    /// Client-generated id for the mission attempt the upgrade belongs to.
-    pub run_id: Uuid,
-    /// Control being upgraded. Recorded for audit; it does not affect the cost.
-    pub defense_id: String,
-    /// Level the client believes it is upgrading from. The server derives the
-    /// expected level from the settled ledger and rejects a mismatch.
-    pub from_level: i32,
-}
-
-/// Outcome of a Cyber Defense upgrade spend.
-#[derive(Debug, Serialize, ToSchema)]
-pub struct CyberDefenseUpgradeResponse {
-    /// Settled balance after the spend. Unchanged on an idempotent retry.
-    pub bits_balance: i64,
-    /// Bits charged for this upgrade.
-    pub spent: i64,
-    /// `false` when this `event_id` was already settled (a safe retry).
-    pub newly_settled: bool,
-}
-
 /// A question shown to the learner. Contains no answer key.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct QuestionView {
@@ -1647,6 +1617,10 @@ pub struct CyberDefenseProfileResponse {
     pub confrontation_available: bool,
     /// Adversaries currently allowed to appear, in introduction order.
     pub available_adversaries: Vec<String>,
+    /// Permanent Tower theme cosmetics with ownership/equipped state.
+    pub cosmetics: Vec<CyberCosmeticDto>,
+    /// Equipped Tower theme id, when any.
+    pub equipped_theme: Option<String>,
 }
 
 /// Client result evidence for a Stage 1 campaign mission.
@@ -1733,6 +1707,63 @@ pub struct CyberTowerUpgradePurchaseResponse {
     pub newly_settled: bool,
 }
 
+/// One permanent Tower theme cosmetic.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCosmeticDto {
+    /// Cosmetic identifier.
+    pub cosmetic_id: String,
+    /// Learner-facing name.
+    pub name: String,
+    /// Short description.
+    pub description: String,
+    /// One-time Bits cost.
+    pub price: i64,
+    /// Whether the learner owns it.
+    pub owned: bool,
+    /// Whether it is currently equipped.
+    pub equipped: bool,
+}
+
+/// Cosmetic ownership and equipped-theme state.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCosmeticsStateDto {
+    /// Every available cosmetic with ownership/equipped state.
+    pub cosmetics: Vec<CyberCosmeticDto>,
+    /// Equipped theme id, when any.
+    pub equipped_theme: Option<String>,
+    /// Settled Bits balance.
+    pub bits_balance: i64,
+}
+
+/// Request to purchase one cosmetic with Bits.
+///
+/// The price is never sent: the server derives it from canonical policy.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberCosmeticPurchaseRequest {
+    /// Client-generated idempotency key for this purchase.
+    pub event_id: Uuid,
+}
+
+/// Result of a cosmetic purchase.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCosmeticPurchaseResponse {
+    /// Cosmetic that was purchased.
+    pub cosmetic_id: String,
+    /// Bits charged (zero on an idempotent retry).
+    pub spent: i64,
+    /// `false` when the learner already owned it (a safe retry).
+    pub newly_settled: bool,
+    /// Updated ownership/equipped state.
+    pub state: CyberCosmeticsStateDto,
+}
+
+/// Request to equip (or clear) a Tower theme.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberCosmeticEquipRequest {
+    /// Theme to equip, or `null` to clear.
+    pub theme_id: Option<String>,
+}
+
 /// Request to replace a hero's selected talents.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CyberHeroTalentRequest {
@@ -1747,8 +1778,59 @@ pub struct CyberOperationStartRequest {
     pub requested_threat_level: i32,
     /// Selected hero, when any. Defaults to the Security Engineer.
     pub hero_id: Option<String>,
+    /// Opaque server-issued offer id the player chose.
+    ///
+    /// When present the server starts exactly that offered template/adversary;
+    /// a client cannot forge an offer for a locked template.
+    pub offer_id: Option<Uuid>,
     /// Explicit template choice, when browsing Operations directly.
+    ///
+    /// Only the story-gated confrontation may be pinned this way; ordinary
+    /// templates must come from an offer.
     pub template_id: Option<String>,
+}
+
+/// Request for the current Operation offer set.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberOperationOffersRequest {
+    /// Threat Level to preview rewards at. Defaults to the recommendation.
+    pub requested_threat_level: Option<i32>,
+}
+
+/// One chooseable Operation offer.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationOfferDto {
+    /// Opaque offer id, passed back when starting the run.
+    pub offer_id: Uuid,
+    /// Template identifier.
+    pub template_id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Adversary identifier.
+    pub adversary_id: String,
+    /// Adversary display name.
+    pub adversary_name: String,
+    /// Estimated minutes to clear.
+    pub estimated_minutes: i32,
+    /// Map identifier.
+    pub map_id: String,
+    /// Short summary.
+    pub summary: String,
+    /// Attack families the Operation features.
+    pub threat_summary: Vec<String>,
+    /// Reward preview at three stars.
+    pub reward_preview: CyberRewardDto,
+}
+
+/// A stable set of Operation offers for the dashboard.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationOffersResponse {
+    /// Up to three offers, best/least-recent first.
+    pub offers: Vec<CyberOperationOfferDto>,
+    /// Whether the story confrontation is currently available.
+    pub confrontation_available: bool,
+    /// Threat Level the previews were computed at.
+    pub preview_threat_level: i32,
 }
 
 /// One Engineering Lab defense substitution.

@@ -35,6 +35,7 @@ function profileFixture(story: CyberProfile["story"]): CyberProfile {
     operations_unlocked: false,
     confrontation_available: false,
     available_adversaries: [],
+    cosmetics: [],
   };
 }
 

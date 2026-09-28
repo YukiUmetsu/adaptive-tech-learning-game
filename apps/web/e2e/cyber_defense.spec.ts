@@ -17,6 +17,10 @@ import {
  * matter: server-authoritative unlocking, operator/difficulty choice, Tower
  * intel gating, server-side settlement, and persistence across a refresh.
  *
+ * Settlement now enforces a server-elapsed floor (a run cannot settle the
+ * instant it was created), so the API-settled test ages the run before
+ * completing it, exactly as a real multi-minute battle would.
+ *
  * Every test uses a unique local developer identity, so runs never share state.
  */
 
@@ -115,9 +119,11 @@ test("fresh campaign unlocks Operations; operator, difficulty, and Tower intel p
   await expect(page.getByRole("radio", { name: /SRE/ })).toBeVisible();
 
   // Choose the SRE and a non-recommended Threat Level before deploying.
+  // The dashboard now presents server-issued offers; the first is selected by
+  // default and "Deploy" starts it.
   await page.getByRole("radio", { name: /SRE/ }).click();
   await page.getByRole("radio", { name: "2" }).click();
-  await page.getByRole("button", { name: /continue defense/i }).click();
+  await page.getByRole("button", { name: /^deploy$/i }).click();
 
   // Briefing: without SOC / Threat Intelligence, wave detail and the adversary
   // specialty stay hidden, and the chosen operator is shown.
@@ -159,7 +165,7 @@ test("fresh campaign unlocks Operations; operator, difficulty, and Tower intel p
 
   // A new Operation briefing now reveals the first upcoming wave.
   await page.goto("/game");
-  await page.getByRole("button", { name: /continue defense/i }).click();
+  await page.getByRole("button", { name: /^deploy$/i }).click();
   await expect(page).toHaveURL(/\/game\/operations\//);
   await expect(page.getByText(/Wave 1/)).toBeVisible();
   // Threat Intelligence is still Lv1, so the specialty stays hidden.
@@ -175,9 +181,13 @@ test("a settled Operation persists its reward on the dashboard", async ({
   await seedCampaignComplete(request, subject);
 
   await page.goto("/game");
-  await page.getByRole("button", { name: /continue defense/i }).click();
+  await page.getByRole("button", { name: /^deploy$/i }).click();
   await expect(page).toHaveURL(/\/game\/operations\//);
   const runId = runIdFromUrl(page);
+
+  // The integrity guard rejects a run that settles before it could plausibly
+  // have been played. Age it past the minimum plausible window.
+  await page.waitForTimeout(21_000);
 
   // Settle the run through the API (the battle itself runs in real time).
   const settled = await request.post(

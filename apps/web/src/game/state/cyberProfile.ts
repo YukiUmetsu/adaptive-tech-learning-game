@@ -24,6 +24,12 @@ export type CyberCampaignCompletion =
 export type CyberTowerPurchase =
   components["schemas"]["CyberTowerUpgradePurchaseResponse"];
 export type CyberHeroProgress = components["schemas"]["CyberHeroProgressDto"];
+export type CyberOperationOffer = components["schemas"]["CyberOperationOfferDto"];
+export type CyberOperationOffers =
+  components["schemas"]["CyberOperationOffersResponse"];
+export type CyberCosmeticsState = components["schemas"]["CyberCosmeticsStateDto"];
+export type CyberCosmeticPurchase =
+  components["schemas"]["CyberCosmeticPurchaseResponse"];
 
 /** Uniform result of a Cyber Defense API call. */
 export type CyberApiResult<T> =
@@ -192,10 +198,61 @@ export function useCyberProfileError(): string | null {
 export async function startOperation(request: {
   requested_threat_level: number;
   hero_id?: string;
+  offer_id?: string;
   template_id?: string;
 }): Promise<CyberApiResult<CyberOperationRun>> {
   return run(() =>
     api.POST("/v1/cyber-defense/operations", { body: request }),
+  );
+}
+
+/**
+ * Fetches the current stable set of Operation offers.
+ *
+ * Offers are persisted server-side and reused, so repeated calls return the
+ * same set until it expires or is consumed. Only `requested_threat_level`
+ * changes the reward previews.
+ */
+export function getOperationOffers(
+  threatLevel?: number,
+): Promise<CyberApiResult<CyberOperationOffers>> {
+  return run(() =>
+    api.POST("/v1/cyber-defense/operations/offers", {
+      body: { requested_threat_level: threatLevel },
+    }),
+  );
+}
+
+/** Purchases a permanent Tower theme cosmetic and reconciles the profile. */
+export function purchaseCosmetic(
+  cosmeticId: string,
+  eventId: string,
+): Promise<CyberApiResult<CyberCosmeticPurchase>> {
+  return run(
+    () =>
+      api.POST("/v1/cyber-defense/cosmetics/{cosmetic_id}/purchase", {
+        params: { path: { cosmetic_id: cosmeticId } },
+        body: { event_id: eventId },
+      }),
+    (data) => {
+      reconcileBits(data.state.bits_balance);
+      void refreshCyberProfile();
+    },
+  );
+}
+
+/** Equips (or clears) an owned Tower theme. */
+export function equipCosmetic(
+  themeId: string | null,
+): Promise<CyberApiResult<CyberCosmeticsState>> {
+  return run(
+    () =>
+      api.PUT("/v1/cyber-defense/cosmetics/equipped", {
+        body: { theme_id: themeId },
+      }),
+    () => {
+      void refreshCyberProfile();
+    },
   );
 }
 

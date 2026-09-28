@@ -11,7 +11,6 @@ import { useDailyMissionHref } from "../hooks/useDailyMissionHref";
 import { MOBILE_NAV_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
-import { flushBitSpends } from "../state/bitSpends";
 import { flushCyberTelemetry } from "../game/state/cyberTelemetry";
 import { resetCyberProfile } from "../game/state/cyberProfile";
 import { resetStoryAcknowledgements } from "../game/persistence/storyAck";
@@ -57,12 +56,10 @@ export default function AppShell() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      // Settle any queued Bit spends before reading the authoritative balance,
-      // so the balance already reflects confirmed upgrades.
-      void (async () => {
-        await flushBitSpends();
-        await refreshWallet();
-      })();
+      // Read the authoritative Bits balance on sign-in. Tower and cosmetic
+      // purchases settle server-side at click time, so there is no client queue
+      // to flush first.
+      void refreshWallet();
     } else if (status === "anonymous") {
       resetWallet();
       resetCyberProfile();
@@ -70,12 +67,11 @@ export default function AppShell() {
     }
   }, [status]);
 
-  // Returning online is a natural boundary to flush queued auxiliary work,
-  // pending Bits spends, and buffered telemetry. No polling timer is introduced.
+  // Returning online is a natural boundary to flush queued auxiliary work and
+  // buffered telemetry. No polling timer is introduced.
   useEffect(() => {
     const handleOnline = () => {
       void flushAuxiliary();
-      void flushBitSpends();
       void flushCyberTelemetry();
     };
     window.addEventListener("online", handleOnline);

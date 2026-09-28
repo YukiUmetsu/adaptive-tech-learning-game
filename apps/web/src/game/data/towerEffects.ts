@@ -23,6 +23,37 @@ export function towerProgressFromUpgrades(
   return progress;
 }
 
+/** Structural shape of a frozen Operation tower snapshot. */
+export interface OperationTowerLevels {
+  soc_level: number;
+  threat_intelligence_level: number;
+  training_center_level: number;
+  engineering_lab_level: number;
+  resilience_center_level: number;
+}
+
+/**
+ * Resolves room levels from a run's frozen progression snapshot.
+ *
+ * A run must use the levels captured when it was created, never the player's
+ * current Tower state, so an upgrade in another tab cannot strengthen an
+ * in-progress Operation (Stage2.md immutable runs).
+ */
+export function towerProgressFromSnapshot(
+  tower: OperationTowerLevels | undefined,
+): TowerProgress {
+  if (!tower) {
+    return {};
+  }
+  return {
+    soc: tower.soc_level,
+    threat_intelligence: tower.threat_intelligence_level,
+    training_center: tower.training_center_level,
+    engineering_lab: tower.engineering_lab_level,
+    resilience_center: tower.resilience_center_level,
+  };
+}
+
 /**
  * What an Operation briefing is allowed to reveal, derived only from Tower
  * progression. SOC gates wave detail; Threat Intelligence gates adversary,

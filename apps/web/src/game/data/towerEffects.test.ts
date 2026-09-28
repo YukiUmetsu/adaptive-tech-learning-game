@@ -5,6 +5,7 @@ import {
   engineeringLabSwapAllowance,
   resilienceEmergencyRecovery,
   resiliencePostmortemIntel,
+  towerProgressFromSnapshot,
   towerProgressFromUpgrades,
 } from "./towerEffects";
 
@@ -55,6 +56,25 @@ describe("deriveOperationIntelVisibility", () => {
       ]),
     ).toEqual({ soc: 3, threat_intelligence: 2 });
     expect(towerProgressFromUpgrades(undefined)).toEqual({});
+  });
+
+  it("resolves room levels from a run's frozen snapshot", () => {
+    expect(
+      towerProgressFromSnapshot({
+        soc_level: 4,
+        threat_intelligence_level: 3,
+        training_center_level: 2,
+        engineering_lab_level: 1,
+        resilience_center_level: 2,
+      }),
+    ).toEqual({
+      soc: 4,
+      threat_intelligence: 3,
+      training_center: 2,
+      engineering_lab: 1,
+      resilience_center: 2,
+    });
+    expect(towerProgressFromSnapshot(undefined)).toEqual({});
   });
 });
 

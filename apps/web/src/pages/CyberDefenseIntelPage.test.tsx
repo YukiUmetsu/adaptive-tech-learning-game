@@ -37,6 +37,7 @@ function profileFixture(overrides: Partial<CyberProfile> = {}): CyberProfile {
     operations_unlocked: false,
     confrontation_available: false,
     available_adversaries: [],
+    cosmetics: [],
     ...overrides,
   };
 }

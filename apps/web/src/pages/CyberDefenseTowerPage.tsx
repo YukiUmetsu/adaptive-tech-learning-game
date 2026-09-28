@@ -17,6 +17,8 @@ import {
   type TowerUpgradeDefinition,
 } from "../game/models/tower";
 import {
+  equipCosmetic,
+  purchaseCosmetic,
   purchaseTowerUpgrade,
   refreshCyberProfile,
   useCyberProfile,
@@ -102,6 +104,8 @@ export default function CyberDefenseTowerPage() {
   const reducedMotion = prefersReducedMotionPreference();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, string>>({});
+  const [cosmeticBusyId, setCosmeticBusyId] = useState<string | null>(null);
+  const [cosmeticMessage, setCosmeticMessage] = useState<string | null>(null);
   // Nonce lets the same room re-run the celebration on a repeat upgrade.
   const [celebration, setCelebration] = useState<{
     id: string;
@@ -168,6 +172,36 @@ export default function CyberDefenseTowerPage() {
     } finally {
       // Always release the button, even if the request rejects unexpectedly.
       setBusyId(null);
+    }
+  };
+
+  const handleBuyCosmetic = async (cosmeticId: string) => {
+    setCosmeticBusyId(cosmeticId);
+    setCosmeticMessage(null);
+    try {
+      const result = await purchaseCosmetic(cosmeticId, newId());
+      if (!result.ok) {
+        setCosmeticMessage(result.message);
+      }
+    } catch {
+      setCosmeticMessage("Could not reach the server. Try again.");
+    } finally {
+      setCosmeticBusyId(null);
+    }
+  };
+
+  const handleEquipCosmetic = async (themeId: string | null) => {
+    setCosmeticBusyId(themeId ?? "__none__");
+    setCosmeticMessage(null);
+    try {
+      const result = await equipCosmetic(themeId);
+      if (!result.ok) {
+        setCosmeticMessage(result.message);
+      }
+    } catch {
+      setCosmeticMessage("Could not reach the server. Try again.");
+    } finally {
+      setCosmeticBusyId(null);
     }
   };
 
@@ -360,6 +394,79 @@ export default function CyberDefenseTowerPage() {
           );
         })}
       </ul>
+
+      <section
+        className="cyber-appearance"
+        aria-labelledby="cyber-appearance-title"
+      >
+        <div className="cyber-mission-head">
+          <h2 id="cyber-appearance-title">Appearance</h2>
+          <span className="muted">Permanent themes · no gameplay effect</span>
+        </div>
+        {cosmeticMessage ? (
+          <p className="cyber-room-error" role="alert">
+            {cosmeticMessage}
+          </p>
+        ) : null}
+        <ul className="cyber-theme-grid">
+          {profile.cosmetics.map((cosmetic) => {
+            const equipped = profile.equipped_theme === cosmetic.cosmetic_id;
+            const affordable = profile.bits_balance >= cosmetic.price;
+            const busy = cosmeticBusyId === cosmetic.cosmetic_id;
+            return (
+              <li
+                key={cosmetic.cosmetic_id}
+                className={`cyber-theme-card${equipped ? " is-equipped" : ""}`}
+              >
+                <span
+                  className="cyber-theme-swatch"
+                  data-theme={cosmetic.cosmetic_id}
+                  aria-hidden="true"
+                />
+                <div className="cyber-theme-body">
+                  <h3>{cosmetic.name}</h3>
+                  <p className="muted">{cosmetic.description}</p>
+                  <p className="cyber-theme-price">
+                    <CoinIcon size={14} />{" "}
+                    {cosmetic.owned
+                      ? "Owned"
+                      : `${cosmetic.price.toLocaleString()} Bits`}
+                  </p>
+                </div>
+                {cosmetic.owned ? (
+                  <button
+                    type="button"
+                    className="cyber-room-upgrade"
+                    disabled={busy}
+                    aria-label={
+                      equipped
+                        ? `Unequip ${cosmetic.name}`
+                        : `Equip ${cosmetic.name}`
+                    }
+                    onClick={() =>
+                      void handleEquipCosmetic(
+                        equipped ? null : cosmetic.cosmetic_id,
+                      )
+                    }
+                  >
+                    {equipped ? "Equipped" : busy ? "…" : "Equip"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="cyber-room-upgrade"
+                    disabled={!affordable || busy}
+                    aria-label={`Buy ${cosmetic.name} for ${cosmetic.price} Bits`}
+                    onClick={() => void handleBuyCosmetic(cosmetic.cosmetic_id)}
+                  >
+                    {busy ? "Buying…" : "Buy"}
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </section>
   );
 }

@@ -3,6 +3,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CyberProfile } from "../../state/cyberProfile";
 import { writeLastHeroId } from "../../persistence/heroSelection";
+
+// Offers are fetched from the server; unit tests stub the call so they do not
+// touch the network. An empty set exercises the offline fallback path.
+vi.mock("../../state/cyberProfile", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../state/cyberProfile")>();
+  return {
+    ...actual,
+    getOperationOffers: vi.fn(async () => ({
+      ok: true as const,
+      data: {
+        offers: [],
+        confrontation_available: false,
+        preview_threat_level: 1,
+      },
+    })),
+  };
+});
+
 import OperationSetup from "./OperationSetup";
 
 function profile(overrides: Partial<CyberProfile> = {}): CyberProfile {
@@ -51,6 +70,7 @@ function profile(overrides: Partial<CyberProfile> = {}): CyberProfile {
     operations_unlocked: true,
     confrontation_available: false,
     available_adversaries: ["ghost-7"],
+    cosmetics: [],
     ...overrides,
   };
 }

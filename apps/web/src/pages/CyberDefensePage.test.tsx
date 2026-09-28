@@ -35,6 +35,14 @@ vi.mock("../game/state/cyberProfile", () => ({
     message: "offline",
     activeRunId: null,
   }),
+  getOperationOffers: async () => ({
+    ok: true as const,
+    data: {
+      offers: [],
+      confrontation_available: false,
+      preview_threat_level: 1,
+    },
+  }),
 }));
 
 vi.mock("../game/state/cyberTelemetry", () => ({
@@ -83,6 +91,7 @@ function baseProfile(overrides: Partial<CyberProfile> = {}): CyberProfile {
     operations_unlocked: false,
     confrontation_available: false,
     available_adversaries: [],
+    cosmetics: [],
     ...overrides,
   };
 }
@@ -178,7 +187,7 @@ describe("CyberDefensePage", () => {
     expect(
       screen.getByRole("button", { name: /continue defense/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Recommended Operation/i)).toBeInTheDocument();
+    expect(screen.getByText(/Choose Operation/i)).toBeInTheDocument();
   });
 
   it("exposes the upgrade modules and the campaign list", () => {

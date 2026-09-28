@@ -114,6 +114,63 @@ pub fn tower_upgrade_cost(upgrade_id: &str, current_level: i32) -> Option<i64> {
     upgrade.costs.get(index).copied()
 }
 
+/// One permanent, no-gameplay-effect cosmetic (a Tower theme).
+///
+/// Cosmetics exist so Bits keep a use after every functional Tower room is
+/// maxed. They never change combat: the price bands are deliberately below and
+/// above the Tower costs so cosmetics do not crowd out early functional
+/// progression.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CosmeticDefinition {
+    /// Stable cosmetic identifier.
+    pub id: &'static str,
+    /// Learner-facing name.
+    pub name: &'static str,
+    /// Short description.
+    pub description: &'static str,
+    /// One-time Bits cost.
+    pub price: i64,
+}
+
+/// Every purchasable Tower theme, cheapest first.
+pub const COSMETICS: &[CosmeticDefinition] = &[
+    CosmeticDefinition {
+        id: "neon-blue",
+        name: "Neon Blue",
+        description: "Cool cyan grid glow.",
+        price: 180,
+    },
+    CosmeticDefinition {
+        id: "amber-soc",
+        name: "Amber SOC",
+        description: "Warm amber operations-room lighting.",
+        price: 220,
+    },
+    CosmeticDefinition {
+        id: "violet-grid",
+        name: "Violet Grid",
+        description: "Deep violet lattice accents.",
+        price: 480,
+    },
+    CosmeticDefinition {
+        id: "minimal-dark",
+        name: "Minimal Dark",
+        description: "Quiet, low-glare surfaces.",
+        price: 600,
+    },
+    CosmeticDefinition {
+        id: "red-alert",
+        name: "Red Alert",
+        description: "Prestige alert-red command styling.",
+        price: 1200,
+    },
+];
+
+/// Looks up a cosmetic by id.
+pub fn cosmetic(cosmetic_id: &str) -> Option<&'static CosmeticDefinition> {
+    COSMETICS.iter().find(|entry| entry.id == cosmetic_id)
+}
+
 /// Aggregate Tower level derived from room levels: `1 + sum(room levels)`.
 ///
 /// There is no second Tower XP system; this is the only Tower level.
@@ -218,9 +275,51 @@ pub const CAMPAIGN_MISSIONS: &[(&str, i64)] = &[
     ("botnet-boss", 90),
 ];
 
+/// The canonical campaign order. Each mission requires the previous one.
+///
+/// This is the server-authoritative prerequisite chain: a client cannot submit
+/// the boss first and unlock Operations, and it cannot fabricate the final
+/// mission through legacy import either (see `campaign_complete`).
+pub const CAMPAIGN_ORDER: &[&str] = &[
+    "ddos-basics",
+    "sql-injection",
+    "credential-stuffing",
+    "mixed-defense",
+    "botnet-boss",
+];
+
 /// Returns whether `mission_id` is a known Stage 1 campaign mission.
 pub fn is_campaign_mission(mission_id: &str) -> bool {
     CAMPAIGN_MISSIONS.iter().any(|(id, _)| *id == mission_id)
+}
+
+/// The mission that must be completed before `mission_id`, if any.
+///
+/// Returns `None` for the first mission (and for an unknown id), so a caller
+/// that has already checked `is_campaign_mission` treats `None` as "no
+/// prerequisite".
+pub fn campaign_prerequisite(mission_id: &str) -> Option<&'static str> {
+    let index = CAMPAIGN_ORDER.iter().position(|id| *id == mission_id)?;
+    if index == 0 {
+        None
+    } else {
+        Some(CAMPAIGN_ORDER[index - 1])
+    }
+}
+
+/// Whether `mission_id` may be attempted given the server-side completed set.
+///
+/// Only the immediately preceding mission is required: because completion is
+/// enforced at settlement, a learner can never skip a step, so checking one
+/// link is sufficient. An unknown mission is never unlocked.
+pub fn campaign_mission_unlocked(mission_id: &str, completed: &[String]) -> bool {
+    if !is_campaign_mission(mission_id) {
+        return false;
+    }
+    match campaign_prerequisite(mission_id) {
+        None => true,
+        Some(previous) => completed.iter().any(|id| id == previous),
+    }
 }
 
 /// The two Stage 1 heroes every profile reports, even before any XP is earned.
@@ -236,13 +335,49 @@ pub const CAMPAIGN_FINAL_MISSION_ID: &str = "botnet-boss";
 
 /// Whether the learner's campaign is complete enough to start Operations.
 ///
-/// The server enforces this rather than trusting the UI: a learner must have
-/// cleared the Chapter 1 boss before any Operation can be created.
+/// The server enforces this rather than trusting the UI: every canonical
+/// mission, in order, must be cleared before any Operation can be created.
+/// Requiring the whole chain (rather than only the final mission) also closes
+/// the legacy-import hole where a client could claim only `botnet-boss`.
 pub fn campaign_complete(completed_mission_ids: &[String]) -> bool {
-    completed_mission_ids
+    CAMPAIGN_ORDER
         .iter()
-        .any(|id| id == CAMPAIGN_FINAL_MISSION_ID)
+        .all(|mission_id| completed_mission_ids.iter().any(|id| id == mission_id))
 }
+
+/// Minimum wall-clock time between Operation creation and settlement.
+///
+/// The browser simulation is never replayed server-side, so this is the
+/// cheapest useful anti-fabrication guard: a run cannot be settled the instant
+/// it is created. It is deliberately conservative (well under a real run) so
+/// legitimate long pauses and accelerated test fixtures are unaffected.
+pub const OPERATION_MIN_ELAPSED_MS: i64 = 20_000;
+
+/// Tolerance added to server elapsed time when checking a claimed duration.
+///
+/// A legitimate run can pause for a long time, so the claimed active duration
+/// may be far *below* server elapsed. It may only slightly exceed server
+/// elapsed; this tolerance absorbs clock skew between browser and server.
+pub const OPERATION_DURATION_TOLERANCE_MS: i64 = 120_000;
+
+/// Whether a claimed Operation result is plausible for the server elapsed time.
+///
+/// Requires the run to have existed for at least [`OPERATION_MIN_ELAPSED_MS`]
+/// and the claimed active duration to not exceed server elapsed plus the
+/// tolerance. A long pause/resume is always allowed.
+pub fn operation_result_is_plausible(server_elapsed_ms: i64, claimed_duration_ms: i64) -> bool {
+    server_elapsed_ms >= OPERATION_MIN_ELAPSED_MS
+        && claimed_duration_ms <= server_elapsed_ms + OPERATION_DURATION_TOLERANCE_MS
+}
+
+/// Length of the reward-settlement rate-guard window.
+pub const OPERATION_RATE_WINDOW_MINUTES: i64 = 60;
+
+/// Maximum Operations one learner may settle in the rate-guard window.
+///
+/// A real Operation takes several minutes, so a normal player can never reach
+/// this ceiling. It only blocks scripted settlement at impossible frequency.
+pub const OPERATION_RATE_MAX_SETTLED: i64 = 30;
 
 /// Hero XP multiplier granted by the Training Center room level.
 ///
@@ -974,13 +1109,81 @@ mod tests {
     }
 
     #[test]
-    fn campaign_is_complete_only_after_the_chapter_one_boss() {
+    fn campaign_is_complete_only_after_the_full_ordered_chain() {
         assert!(!campaign_complete(&[]));
         assert!(!campaign_complete(&["ddos-basics".to_owned()]));
-        assert!(campaign_complete(&[
+        // A fabricated final-mission-only import must not unlock Operations.
+        assert!(!campaign_complete(&["botnet-boss".to_owned()]));
+        assert!(!campaign_complete(&[
             "ddos-basics".to_owned(),
             "botnet-boss".to_owned()
         ]));
+        let full: Vec<String> = CAMPAIGN_ORDER.iter().map(|id| (*id).to_owned()).collect();
+        assert!(campaign_complete(&full));
+    }
+
+    #[test]
+    fn campaign_prerequisites_follow_the_canonical_order() {
+        assert_eq!(campaign_prerequisite("ddos-basics"), None);
+        assert_eq!(campaign_prerequisite("sql-injection"), Some("ddos-basics"));
+        assert_eq!(
+            campaign_prerequisite("credential-stuffing"),
+            Some("sql-injection")
+        );
+        assert_eq!(
+            campaign_prerequisite("mixed-defense"),
+            Some("credential-stuffing")
+        );
+        assert_eq!(campaign_prerequisite("botnet-boss"), Some("mixed-defense"));
+        assert_eq!(campaign_prerequisite("unknown"), None);
+    }
+
+    #[test]
+    fn campaign_missions_unlock_one_step_at_a_time() {
+        let none: Vec<String> = Vec::new();
+        assert!(campaign_mission_unlocked("ddos-basics", &none));
+        assert!(!campaign_mission_unlocked("sql-injection", &none));
+        assert!(!campaign_mission_unlocked("botnet-boss", &none));
+        // Directly submitting the boss is not enough.
+        assert!(!campaign_mission_unlocked(
+            "botnet-boss",
+            &["botnet-boss".to_owned()]
+        ));
+        assert!(campaign_mission_unlocked(
+            "sql-injection",
+            &["ddos-basics".to_owned()]
+        ));
+        assert!(!campaign_mission_unlocked("unknown", &none));
+    }
+
+    #[test]
+    fn operation_settlement_requires_elapsed_time() {
+        assert!(!operation_result_is_plausible(0, 0));
+        assert!(!operation_result_is_plausible(
+            OPERATION_MIN_ELAPSED_MS - 1,
+            1_000
+        ));
+        assert!(operation_result_is_plausible(
+            OPERATION_MIN_ELAPSED_MS,
+            1_000
+        ));
+    }
+
+    #[test]
+    fn operation_claimed_duration_tolerance_is_bounded() {
+        let elapsed = 300_000;
+        // A long pause: claimed active time far below server elapsed is fine.
+        assert!(operation_result_is_plausible(elapsed, 10_000));
+        // Claimed time within tolerance of elapsed is fine.
+        assert!(operation_result_is_plausible(
+            elapsed,
+            elapsed + OPERATION_DURATION_TOLERANCE_MS
+        ));
+        // A claim that outruns the wall clock is rejected.
+        assert!(!operation_result_is_plausible(
+            elapsed,
+            elapsed + OPERATION_DURATION_TOLERANCE_MS + 1
+        ));
     }
 
     #[test]
@@ -1000,6 +1203,23 @@ mod tests {
         assert!(scale_xp(35, training_center_hero_xp_multiplier(2)) > 35);
         assert_eq!(scale_xp(0, 1.1), 0);
         assert_eq!(scale_xp(35, 1.0), 35);
+    }
+
+    #[test]
+    fn cosmetics_are_unique_priced_and_non_powerful() {
+        let mut ids: Vec<&str> = COSMETICS.iter().map(|entry| entry.id).collect();
+        let before = ids.len();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), before, "cosmetic ids must be unique");
+        assert!(COSMETICS.iter().any(|entry| entry.price <= 250));
+        assert!(COSMETICS.iter().any(|entry| entry.price >= 1000));
+        for entry in COSMETICS {
+            assert!(entry.price > 0);
+            assert!(!entry.id.to_lowercase().contains("oracle"));
+        }
+        assert!(cosmetic("neon-blue").is_some());
+        assert!(cosmetic("does-not-exist").is_none());
     }
 
     #[test]

@@ -16,19 +16,24 @@ use adaptive_learn_content::{
 use adaptive_learn_db as db;
 use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
 use adaptive_learn_domain::{
-    AdversaryUnlockInput, CONFRONTATION_TEMPLATE_ID, ConceptWeight, DAILY_MISSION_BONUS_BITS,
-    DEFAULT_HEALTH_RATIO_THRESHOLD, GeneratedOperation, LearningEvent, MODEL_VERSION,
-    MissionInstance, MissionStatus, OperationGenerationInput, OperationOutcome, PredictionSample,
-    QuizMode, SECTION_QUIZ_BONUS_BITS, StoryProgressInput, THREAT_LEVEL_MAX, THREAT_LEVEL_MIN,
-    TOWER_UPGRADES, ThreatRecommendationInput, active_chapter, adversary_progress_award,
-    adversary_rank_from_progress, available_adversaries, campaign_complete, career_level_from_xp,
-    career_rank, confrontation_available, cyber_defense_upgrade_bits, evaluate,
-    evaluate_story_nodes, fixed_mission_reward, generate_operation, hero_level_from_xp,
-    is_campaign_mission, is_known_hero, is_legal_talent, operation_defense, operation_reward,
+    AdversaryUnlockInput, CAMPAIGN_ORDER, CONFRONTATION_TEMPLATE_ID, COSMETICS, ConceptWeight,
+    DAILY_MISSION_BONUS_BITS, DEFAULT_HEALTH_RATIO_THRESHOLD, GeneratedOperation, LearningEvent,
+    MAX_OPERATION_OFFERS, MODEL_VERSION, MissionInstance, MissionStatus,
+    OPERATION_RATE_MAX_SETTLED, OPERATION_RATE_WINDOW_MINUTES, OperationGenerationInput,
+    OperationHeroSnapshot, OperationOutcome, OperationProgressionSnapshot, OperationTowerSnapshot,
+    PredictionSample, QuizMode, RecentOperationIdentity, SECTION_QUIZ_BONUS_BITS,
+    StoryProgressInput, THREAT_LEVEL_MAX, THREAT_LEVEL_MIN, TOWER_UPGRADES,
+    ThreatRecommendationInput, active_chapter, adversary_progress_award,
+    adversary_rank_from_progress, available_adversaries, campaign_complete,
+    campaign_mission_unlocked, career_level_from_xp, career_rank, confrontation_available,
+    cosmetic, estimated_operation_minutes, evaluate, evaluate_story_nodes, fixed_mission_reward,
+    generate_operation, hero_level_from_xp, is_campaign_mission, is_known_hero, is_legal_talent,
+    operation_attack, operation_defense, operation_result_is_plausible, operation_reward,
     operation_template, predict_question, recommend_threat_level, retrievability, reward_bits,
-    scale_xp, selectable_templates, summarize_streak, tower_level, tower_upgrade,
-    tower_upgrade_cost, training_center_hero_xp_multiplier, unlocked_threat_level,
-    validate_generated_operation, xp_for_career_level, xp_for_hero_level,
+    scale_xp, select_operation_offer_templates, select_operation_template, selectable_templates,
+    summarize_streak, tower_level, tower_upgrade, tower_upgrade_cost,
+    training_center_hero_xp_multiplier, unlocked_threat_level, validate_generated_operation,
+    xp_for_career_level, xp_for_hero_level,
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
@@ -39,10 +44,12 @@ use crate::dto::{
     CertificationDto, CertificationVersionDto, ChallengeStageKind, ChallengeStageView,
     ChallengeStartRequest, ChallengeSummaryDto, ChallengeView, CompleteMissionResponse, ConceptDto,
     CyberAdversaryProgressDto, CyberCampaignCompleteRequest, CyberCampaignCompleteResponse,
-    CyberCampaignResultDto, CyberCareerDto, CyberCareerSummaryDto, CyberDefenseProfileResponse,
-    CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, CyberHeroProgressDto,
+    CyberCampaignResultDto, CyberCareerDto, CyberCareerSummaryDto, CyberCosmeticDto,
+    CyberCosmeticEquipRequest, CyberCosmeticPurchaseRequest, CyberCosmeticPurchaseResponse,
+    CyberCosmeticsStateDto, CyberDefenseProfileResponse, CyberHeroProgressDto,
     CyberHeroTalentRequest, CyberLegacyImportRequest, CyberLegacyImportResponse,
     CyberOperationCompleteRequest, CyberOperationCompleteResponse, CyberOperationLoadoutRequest,
+    CyberOperationOfferDto, CyberOperationOffersRequest, CyberOperationOffersResponse,
     CyberOperationResultDto, CyberOperationRunDto, CyberOperationStartRequest, CyberRewardDto,
     CyberStoryProgressDto, CyberTelemetryRequest, CyberTelemetryResponse, CyberTowerUpgradeDto,
     CyberTowerUpgradePurchaseRequest, CyberTowerUpgradePurchaseResponse, DailyItemCompleteRequest,
@@ -3073,101 +3080,6 @@ pub async fn wallet(
     })
 }
 
-/// Debits Bits for a Cyber Defense control upgrade.
-///
-/// The cost is derived from canonical policy, never from the client: the server
-/// derives the control's level from the settled ledger for this run and checks
-/// that the client's `from_level` agrees, so a client cannot choose a cheaper
-/// tier. The debit and its ledger row commit in one transaction, and `event_id`
-/// makes a retry safe, so a dropped response can be resent without
-/// double-charging.
-pub async fn cyber_defense_upgrade(
-    state: &AppState,
-    user: &AuthenticatedUser,
-    request: CyberDefenseUpgradeRequest,
-) -> Result<CyberDefenseUpgradeResponse, ApiError> {
-    let defense_id = request.defense_id.trim();
-    if defense_id.is_empty() || defense_id.len() > 64 {
-        return Err(ApiError::BadRequest("invalid defense id".to_owned()));
-    }
-    if request.from_level < 1 {
-        return Err(ApiError::BadRequest("invalid upgrade level".to_owned()));
-    }
-
-    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
-
-    // Lock the wallet so the level derived from the ledger cannot race with a
-    // concurrent upgrade of the same control.
-    db::wallets::lock_wallet(&mut tx, user.id).await?;
-
-    // Derive the level from the settled ledger, not from the client. A retry of
-    // an existing `event_id` is excluded from the count, so it resolves to the
-    // level it originally upgraded from.
-    let settled = db::wallets::count_upgrades(
-        &mut tx,
-        user.id,
-        request.run_id,
-        defense_id,
-        request.event_id,
-    )
-    .await?;
-    let from_level = settled + 1;
-
-    if i64::from(request.from_level) != from_level {
-        tx.rollback().await.map_err(db::DbError::from)?;
-        return Err(ApiError::Conflict(
-            "upgrade level is out of sequence".to_owned(),
-        ));
-    }
-
-    let cost = i32::try_from(from_level)
-        .ok()
-        .and_then(cyber_defense_upgrade_bits)
-        .ok_or_else(|| ApiError::Conflict("control is already at its maximum level".to_owned()))?;
-
-    let spend = db::wallets::BitSpend {
-        user_id: user.id,
-        device_id: None,
-        event_id: request.event_id,
-        run_id: request.run_id,
-        item_id: defense_id.to_owned(),
-        amount: cost,
-        reason: "cyber_defense_upgrade".to_owned(),
-    };
-
-    match db::wallets::spend(&mut tx, &spend).await? {
-        db::wallets::SpendOutcome::Settled { balance } => {
-            tx.commit().await.map_err(db::DbError::from)?;
-            Ok(CyberDefenseUpgradeResponse {
-                bits_balance: balance,
-                spent: cost,
-                newly_settled: true,
-            })
-        }
-        db::wallets::SpendOutcome::AlreadySettled => {
-            tx.rollback().await.map_err(db::DbError::from)?;
-            let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
-            Ok(CyberDefenseUpgradeResponse {
-                bits_balance,
-                spent: cost,
-                newly_settled: false,
-            })
-        }
-        db::wallets::SpendOutcome::KeyReused => {
-            tx.rollback().await.map_err(db::DbError::from)?;
-            Err(ApiError::Conflict(
-                "idempotency key was reused for a different spend".to_owned(),
-            ))
-        }
-        db::wallets::SpendOutcome::InsufficientFunds => {
-            // Rolling back discards the provisional ledger row, so an
-            // unaffordable spend leaves no trace.
-            tx.rollback().await.map_err(db::DbError::from)?;
-            Err(ApiError::InsufficientBits)
-        }
-    }
-}
-
 /// Why a single synced event was not accepted.
 enum SyncRejection {
     /// The event is invalid; other events in the batch may still succeed.
@@ -4140,6 +4052,7 @@ pub async fn cyber_defense_profile(
     let story_rows = db::cyber_defense::list_story_progress(&mut conn, user.id).await?;
     let campaign_rows = db::cyber_defense::list_campaign_results(&mut conn, user.id).await?;
     let active = db::cyber_defense::find_active_operation_run(&mut conn, user.id).await?;
+    let cosmetic_unlocks = db::cyber_defense::list_cosmetic_unlocks(&mut conn, user.id).await?;
 
     let tower_by_id: HashMap<&str, i32> = tower_rows
         .iter()
@@ -4256,6 +4169,13 @@ pub async fn cyber_defense_profile(
         operations_unlocked,
         confrontation_available: confrontation_available(&story_input),
         available_adversaries: adversaries_available,
+        cosmetics: cosmetics_state(
+            &cosmetic_unlocks,
+            profile.equipped_theme.as_deref(),
+            bits_balance,
+        )
+        .cosmetics,
+        equipped_theme: profile.equipped_theme,
     })
 }
 
@@ -4308,6 +4228,20 @@ pub async fn cyber_defense_campaign_complete(
     let already_settled = existing
         .as_ref()
         .is_some_and(|result| result.first_clear_reward_settled);
+
+    // Server-side campaign order: a client cannot submit the boss (or any later
+    // mission) before its prerequisite is already recorded as completed. The UI
+    // also locks missions, but the server never trusts a client claim.
+    let campaign_rows = db::cyber_defense::list_campaign_results(&mut tx, user.id).await?;
+    let completed_missions: Vec<String> = campaign_rows
+        .iter()
+        .filter(|row| row.completed)
+        .map(|row| row.mission_id.clone())
+        .collect();
+    if !campaign_mission_unlocked(mission_id, &completed_missions) {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::CyberCampaignMissionLocked);
+    }
 
     let claimed = db::cyber_defense::claim_reward_event(
         &mut tx,
@@ -4535,6 +4469,121 @@ pub async fn cyber_defense_tower_purchase(
     }
 }
 
+/// Purchases a permanent Tower theme cosmetic with Bits.
+///
+/// Cosmetics have no gameplay effect. The price is derived from canonical
+/// policy, the wallet ledger is reused, and owning a cosmetic is idempotent: a
+/// retry (or a purchase of something already owned) charges nothing.
+pub async fn cyber_defense_purchase_cosmetic(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    cosmetic_id: &str,
+    request: CyberCosmeticPurchaseRequest,
+) -> Result<CyberCosmeticPurchaseResponse, ApiError> {
+    let definition =
+        cosmetic(cosmetic_id).ok_or_else(|| ApiError::BadRequest("unknown cosmetic".to_owned()))?;
+    let run_id = Uuid::nil();
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+
+    let owned = db::cyber_defense::list_cosmetic_unlocks(&mut tx, user.id).await?;
+    if owned.iter().any(|id| id == definition.id) {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+        return Ok(CyberCosmeticPurchaseResponse {
+            cosmetic_id: definition.id.to_owned(),
+            spent: 0,
+            newly_settled: false,
+            state: cosmetics_state(&owned, profile.equipped_theme.as_deref(), bits_balance),
+        });
+    }
+
+    let spend = db::wallets::BitSpend {
+        user_id: user.id,
+        device_id: None,
+        event_id: request.event_id,
+        run_id,
+        item_id: definition.id.to_owned(),
+        amount: definition.price,
+        reason: "cyber_cosmetic".to_owned(),
+    };
+
+    match db::wallets::spend(&mut tx, &spend).await? {
+        db::wallets::SpendOutcome::Settled { balance } => {
+            db::cyber_defense::unlock_cosmetic(&mut tx, user.id, definition.id).await?;
+            let owned = db::cyber_defense::list_cosmetic_unlocks(&mut tx, user.id).await?;
+            tx.commit().await.map_err(db::DbError::from)?;
+            Ok(CyberCosmeticPurchaseResponse {
+                cosmetic_id: definition.id.to_owned(),
+                spent: definition.price,
+                newly_settled: true,
+                state: cosmetics_state(&owned, profile.equipped_theme.as_deref(), balance),
+            })
+        }
+        db::wallets::SpendOutcome::AlreadySettled => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+            let owned = db::cyber_defense::list_cosmetic_unlocks(&mut conn, user.id).await?;
+            let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+            Ok(CyberCosmeticPurchaseResponse {
+                cosmetic_id: definition.id.to_owned(),
+                spent: 0,
+                newly_settled: false,
+                state: cosmetics_state(&owned, profile.equipped_theme.as_deref(), bits_balance),
+            })
+        }
+        db::wallets::SpendOutcome::KeyReused => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::Conflict(
+                "idempotency key was reused for a different purchase".to_owned(),
+            ))
+        }
+        db::wallets::SpendOutcome::InsufficientFunds => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::InsufficientBits)
+        }
+    }
+}
+
+/// Equips (or clears) an owned Tower theme.
+///
+/// Only an owned theme can be equipped; equipping has no gameplay effect and is
+/// freely reversible.
+pub async fn cyber_defense_equip_cosmetic(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberCosmeticEquipRequest,
+) -> Result<CyberCosmeticsStateDto, ApiError> {
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    let owned = db::cyber_defense::list_cosmetic_unlocks(&mut tx, user.id).await?;
+
+    if let Some(theme_id) = request.theme_id.as_deref() {
+        if cosmetic(theme_id).is_none() {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::BadRequest("unknown cosmetic".to_owned()));
+        }
+        if !owned.iter().any(|id| id == theme_id) {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::BadRequest(
+                "that cosmetic is not owned".to_owned(),
+            ));
+        }
+    }
+
+    db::cyber_defense::set_equipped_theme(&mut tx, user.id, request.theme_id.as_deref()).await?;
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+    Ok(cosmetics_state(
+        &owned,
+        request.theme_id.as_deref(),
+        bits_balance,
+    ))
+}
+
 /// Replaces a hero's selected talents.
 ///
 /// The selection is validated against canonical milestones: the hero must exist,
@@ -4628,6 +4677,72 @@ fn empty_adversary_dto(adversary_id: &str) -> CyberAdversaryProgressDto {
     }
 }
 
+/// Builds the cosmetic ownership/equipped view from stored state.
+fn cosmetics_state(
+    owned: &[String],
+    equipped: Option<&str>,
+    bits_balance: i64,
+) -> CyberCosmeticsStateDto {
+    let cosmetics = COSMETICS
+        .iter()
+        .map(|definition| CyberCosmeticDto {
+            cosmetic_id: definition.id.to_owned(),
+            name: definition.name.to_owned(),
+            description: definition.description.to_owned(),
+            price: definition.price,
+            owned: owned.iter().any(|id| id == definition.id),
+            equipped: equipped == Some(definition.id),
+        })
+        .collect();
+    CyberCosmeticsStateDto {
+        cosmetics,
+        equipped_theme: equipped.map(str::to_owned),
+        bits_balance,
+    }
+}
+
+/// Captures the run-start progression snapshot for one Operation.
+///
+/// Every run-affecting room and the selected hero's talents are read once here
+/// and stored inside the immutable Operation, so later profile changes affect
+/// only future runs.
+async fn build_progression_snapshot(
+    conn: &mut db::PgConnection,
+    user_id: Uuid,
+    hero_id: Option<&str>,
+) -> Result<OperationProgressionSnapshot, ApiError> {
+    let tower_rows = db::cyber_defense::list_tower_upgrades(conn, user_id).await?;
+    let tower_by_id: HashMap<&str, i32> = tower_rows
+        .iter()
+        .map(|row| (row.upgrade_id.as_str(), row.level))
+        .collect();
+    let level_of = |id: &str| tower_by_id.get(id).copied().unwrap_or(0);
+    let tower = OperationTowerSnapshot {
+        soc_level: level_of("soc"),
+        threat_intelligence_level: level_of("threat_intelligence"),
+        training_center_level: level_of("training_center"),
+        engineering_lab_level: level_of("engineering_lab"),
+        resilience_center_level: level_of("resilience_center"),
+    };
+
+    let hero = match hero_id {
+        Some(hero_id) => {
+            let heroes = db::cyber_defense::list_hero_progress(conn, user_id).await?;
+            let row = heroes.iter().find(|row| row.hero_id == hero_id);
+            Some(OperationHeroSnapshot {
+                hero_id: hero_id.to_owned(),
+                level: hero_level_from_xp(row.map(|row| row.xp).unwrap_or(0)),
+                selected_talents: row
+                    .map(|row| row.selected_talents.clone())
+                    .unwrap_or_else(|| serde_json::json!({})),
+            })
+        }
+        None => None,
+    };
+
+    Ok(OperationProgressionSnapshot { hero, tower })
+}
+
 /// Builds the transport view of one stored Operation run.
 fn operation_run_dto(
     run: &db::cyber_defense::OperationRun,
@@ -4707,6 +4822,181 @@ async fn evaluate_and_record_story(
     Ok(newly)
 }
 
+/// Builds one offer DTO from a persisted offer row.
+///
+/// The preview is generated deterministically from the stored seed/template/
+/// adversary/rank at the requested Threat Level, so the preview matches the run
+/// the same offer would start at that level.
+fn operation_offer_dto(
+    offer: &db::cyber_defense::OperationOffer,
+    threat_level: i32,
+) -> Result<CyberOperationOfferDto, ApiError> {
+    let operation = generate_operation(&OperationGenerationInput {
+        seed: offer.seed,
+        template_id: offer.template_id.clone(),
+        adversary_id: offer.adversary_id.clone(),
+        threat_level,
+        adversary_rank: offer.adversary_rank,
+        hero_id: None,
+    })
+    .map_err(|error| {
+        ApiError::Internal(anyhow::anyhow!("stored offer failed to generate: {error}"))
+    })?;
+
+    let mut threat_types: Vec<String> = Vec::new();
+    for wave in &operation.waves {
+        for group in &wave.groups {
+            if let Some(attack) = operation_attack(&group.attack_id) {
+                let attack_type = attack.attack_type.to_owned();
+                if !threat_types.contains(&attack_type) {
+                    threat_types.push(attack_type);
+                }
+            }
+        }
+    }
+
+    Ok(CyberOperationOfferDto {
+        offer_id: offer.id,
+        template_id: offer.template_id.clone(),
+        title: operation.title.clone(),
+        adversary_id: offer.adversary_id.clone(),
+        adversary_name: operation.adversary_name.clone(),
+        estimated_minutes: estimated_operation_minutes(&operation),
+        map_id: operation.map_id.clone(),
+        summary: operation.summary.clone(),
+        threat_summary: threat_types,
+        reward_preview: CyberRewardDto {
+            bits: operation.reward_preview.bits,
+            career_xp: operation.reward_preview.career_xp,
+            hero_xp: operation.reward_preview.hero_xp,
+        },
+    })
+}
+
+/// Returns a stable set of Operation offers for the dashboard.
+///
+/// Offers are persisted and reused until they expire or are consumed, so a
+/// re-render or a second tab sees the same choices. Only templates whose
+/// adversary is currently unlocked can be offered, and the story confrontation
+/// is never mixed into the random offer pool.
+pub async fn cyber_defense_operation_offers(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberOperationOffersRequest,
+) -> Result<CyberOperationOffersResponse, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut conn, user.id).await?;
+
+    let campaign_rows = db::cyber_defense::list_campaign_results(&mut conn, user.id).await?;
+    let completed_campaign_missions: Vec<String> = campaign_rows
+        .iter()
+        .filter(|row| row.completed)
+        .map(|row| row.mission_id.clone())
+        .collect();
+    if !campaign_complete(&completed_campaign_missions) {
+        return Err(ApiError::CyberOperationsLocked);
+    }
+
+    let story_rows = db::cyber_defense::list_story_progress(&mut conn, user.id).await?;
+    let completed_nodes: Vec<String> = story_rows
+        .iter()
+        .map(|row| row.story_node_id.clone())
+        .collect();
+    let available = available_adversaries(&AdversaryUnlockInput {
+        campaign_complete: true,
+        completed_story_nodes: completed_nodes.clone(),
+    });
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut conn, user.id).await?;
+    let story_input = StoryProgressInput {
+        completed_campaign_missions,
+        total_operations_completed: profile.total_operations_completed,
+        highest_threat_level_cleared: profile.highest_threat_level_cleared,
+        adversary_ranks: adversary_rows
+            .iter()
+            .map(|row| {
+                (
+                    row.adversary_id.clone(),
+                    adversary_rank_from_progress(row.progress),
+                )
+            })
+            .collect(),
+        completed_operation_templates: Vec::new(),
+        completed_nodes,
+    };
+
+    let preview_threat_level = request
+        .requested_threat_level
+        .unwrap_or(profile.recommended_threat_level)
+        .clamp(THREAT_LEVEL_MIN, THREAT_LEVEL_MAX);
+
+    let mut offers = db::cyber_defense::list_active_operation_offers(&mut conn, user.id).await?;
+    if offers.is_empty() {
+        let pool = selectable_templates(&available, true);
+        if !pool.is_empty() {
+            let recent_rows =
+                db::cyber_defense::list_recent_operation_identities(&mut conn, user.id, 8).await?;
+            let recent: Vec<RecentOperationIdentity> = recent_rows
+                .iter()
+                .map(|row| RecentOperationIdentity {
+                    template_id: row.template_id.clone(),
+                    adversary_id: row.adversary_id.clone(),
+                })
+                .collect();
+            let seed = Uuid::new_v4().as_u128() as i64;
+            let templates =
+                select_operation_offer_templates(&pool, &recent, seed as u64, MAX_OPERATION_OFFERS);
+            let expires_at = Utc::now() + Duration::minutes(30);
+            let mut new_offers = Vec::new();
+            for template in templates {
+                let Some(adversary) = template
+                    .adversary_ids
+                    .iter()
+                    .find(|adversary| available.contains(adversary))
+                    .copied()
+                else {
+                    continue;
+                };
+                let adversary_rank = adversary_rows
+                    .iter()
+                    .find(|row| row.adversary_id == adversary)
+                    .map(|row| adversary_rank_from_progress(row.progress))
+                    .unwrap_or(1);
+                let id = Uuid::new_v4();
+                new_offers.push(db::cyber_defense::NewOperationOffer {
+                    id,
+                    user_id: user.id,
+                    // The offer id doubles as the deterministic run seed.
+                    seed: id.as_u128() as i64,
+                    template_id: template.id,
+                    adversary_id: adversary,
+                    adversary_rank,
+                    expires_at,
+                });
+            }
+            db::cyber_defense::insert_operation_offers(&mut conn, &new_offers).await?;
+            offers = db::cyber_defense::list_active_operation_offers(&mut conn, user.id).await?;
+        }
+    }
+
+    // Stable display order: oldest first, tie-broken by id.
+    offers.sort_by(|a, b| {
+        a.created_at
+            .cmp(&b.created_at)
+            .then_with(|| a.id.cmp(&b.id))
+    });
+
+    let offers = offers
+        .iter()
+        .map(|offer| operation_offer_dto(offer, preview_threat_level))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(CyberOperationOffersResponse {
+        offers,
+        confrontation_available: confrontation_available(&story_input),
+        preview_threat_level,
+    })
+}
+
 /// Starts one repeatable Operation for the authenticated learner.
 ///
 /// The server selects the template/adversary, generates a secure seed, produces
@@ -4717,8 +5007,11 @@ pub async fn cyber_defense_start_operation(
     user: &AuthenticatedUser,
     request: CyberOperationStartRequest,
 ) -> Result<CyberOperationRunDto, ApiError> {
-    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
-    let profile = db::cyber_defense::get_or_create_profile(&mut conn, user.id).await?;
+    // One transaction covers the whole start, so a consumed offer is rolled
+    // back (released) if the run cannot be persisted. A dropped offer would
+    // otherwise silently remove a player's choice.
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
 
     let unlocked = unlocked_threat_level(
         profile.recommended_threat_level,
@@ -4744,7 +5037,7 @@ pub async fn cyber_defense_start_operation(
 
     // Operations are gated on the campaign boss. The UI also hides them, but the
     // server is authoritative: a client claim is never trusted.
-    let campaign_rows = db::cyber_defense::list_campaign_results(&mut conn, user.id).await?;
+    let campaign_rows = db::cyber_defense::list_campaign_results(&mut tx, user.id).await?;
     let completed_campaign_missions: Vec<String> = campaign_rows
         .iter()
         .filter(|row| row.completed)
@@ -4754,15 +5047,15 @@ pub async fn cyber_defense_start_operation(
         return Err(ApiError::CyberOperationsLocked);
     }
 
-    if let Some(active) = db::cyber_defense::find_active_operation_run(&mut conn, user.id).await? {
+    if let Some(active) = db::cyber_defense::find_active_operation_run(&mut tx, user.id).await? {
         return Err(ApiError::ActiveOperationExists(active.id));
     }
 
     // Adversary availability is story-driven. Adversaries never appear before
     // their introduction milestone, and the template pool always keeps at least
     // one selectable template once Operations are unlocked.
-    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut conn, user.id).await?;
-    let story_rows = db::cyber_defense::list_story_progress(&mut conn, user.id).await?;
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut tx, user.id).await?;
+    let story_rows = db::cyber_defense::list_story_progress(&mut tx, user.id).await?;
     let completed_nodes: Vec<String> = story_rows
         .iter()
         .map(|row| row.story_node_id.clone())
@@ -4788,70 +5081,113 @@ pub async fn cyber_defense_start_operation(
         completed_nodes,
     };
 
-    // Template/adversary selection is server-side. The template may be pinned by
-    // the client for explicit browsing; the adversary is always chosen here.
-    let pick = Uuid::new_v4().as_u128();
-    let template: &adaptive_learn_domain::OperationTemplate = match request.template_id.as_deref() {
-        Some(CONFRONTATION_TEMPLATE_ID) => {
-            if !confrontation_available(&story_input) {
-                return Err(ApiError::CyberOperationLocked);
-            }
-            operation_template(CONFRONTATION_TEMPLATE_ID)
-                .ok_or_else(|| ApiError::BadRequest("unknown operation template".to_owned()))?
-        }
-        Some(id) => {
-            let template = operation_template(id)
-                .ok_or_else(|| ApiError::BadRequest("unknown operation template".to_owned()))?;
-            if !template
-                .adversary_ids
-                .iter()
-                .any(|adversary| available.contains(adversary))
-            {
-                return Err(ApiError::CyberOperationLocked);
-            }
-            template
-        }
-        None => {
-            let pool = selectable_templates(&available, true);
-            if pool.is_empty() {
-                return Err(ApiError::Conflict(
-                    "no repeatable operations are available".to_owned(),
-                ));
-            }
-            pool[(pick % pool.len() as u128) as usize]
-        }
+    let rank_of = |adversary: &str| {
+        adversary_rows
+            .iter()
+            .find(|row| row.adversary_id == adversary)
+            .map(|row| adversary_rank_from_progress(row.progress))
+            .unwrap_or(1)
     };
 
-    let adversary: &'static str = template
-        .adversary_ids
-        .iter()
-        .find(|adversary| available.contains(adversary))
-        .copied()
-        .ok_or_else(|| ApiError::Conflict("no adversary is available".to_owned()))?;
+    // Template/adversary selection is server-side and immutable per run. When an
+    // offer id is supplied, the server starts exactly that offered
+    // template/adversary; a client cannot forge an offer for locked content.
+    // Only the story confrontation may be pinned by template id.
+    let operation = if let Some(offer_id) = request.offer_id {
+        let offer = db::cyber_defense::consume_operation_offer(&mut tx, user.id, offer_id)
+            .await?
+            .ok_or_else(|| {
+                ApiError::BadRequest("that Operation offer is no longer valid".to_owned())
+            })?;
+        if !available.contains(&offer.adversary_id.as_str()) {
+            return Err(ApiError::CyberOperationLocked);
+        }
+        generate_operation(&OperationGenerationInput {
+            seed: offer.seed,
+            template_id: offer.template_id,
+            adversary_id: offer.adversary_id,
+            threat_level: request.requested_threat_level,
+            adversary_rank: offer.adversary_rank,
+            hero_id: hero_id.clone(),
+        })
+        .map_err(|error| ApiError::BadRequest(error.to_string()))?
+    } else if let Some(template_id) = request.template_id.as_deref() {
+        if template_id != CONFRONTATION_TEMPLATE_ID {
+            return Err(ApiError::BadRequest(
+                "start ordinary Operations from an offer".to_owned(),
+            ));
+        }
+        if !confrontation_available(&story_input) {
+            return Err(ApiError::CyberOperationLocked);
+        }
+        let template = operation_template(CONFRONTATION_TEMPLATE_ID)
+            .ok_or_else(|| ApiError::BadRequest("unknown operation template".to_owned()))?;
+        let adversary = template
+            .adversary_ids
+            .iter()
+            .find(|adversary| available.contains(adversary))
+            .copied()
+            .ok_or_else(|| ApiError::Conflict("no adversary is available".to_owned()))?;
+        let seed = Uuid::new_v4().as_u128() as i64;
+        generate_operation(&OperationGenerationInput {
+            seed,
+            template_id: template.id.to_owned(),
+            adversary_id: adversary.to_owned(),
+            threat_level: request.requested_threat_level,
+            adversary_rank: rank_of(adversary),
+            hero_id: hero_id.clone(),
+        })
+        .map_err(|error| ApiError::BadRequest(error.to_string()))?
+    } else {
+        // Backward-compatible random selection with anti-repetition: never the
+        // last two templates when alternatives exist, and never the immediately
+        // preceding template when possible. The confrontation is never random.
+        let pool = selectable_templates(&available, true);
+        if pool.is_empty() {
+            return Err(ApiError::Conflict(
+                "no repeatable operations are available".to_owned(),
+            ));
+        }
+        let recent_rows =
+            db::cyber_defense::list_recent_operation_identities(&mut tx, user.id, 8).await?;
+        let recent: Vec<RecentOperationIdentity> = recent_rows
+            .iter()
+            .map(|row| RecentOperationIdentity {
+                template_id: row.template_id.clone(),
+                adversary_id: row.adversary_id.clone(),
+            })
+            .collect();
+        let seed = Uuid::new_v4().as_u128() as i64;
+        let template = select_operation_template(&pool, &recent, seed as u64)
+            .ok_or_else(|| ApiError::Conflict("no adversary is available".to_owned()))?;
+        let adversary = template
+            .adversary_ids
+            .iter()
+            .find(|adversary| available.contains(adversary))
+            .copied()
+            .ok_or_else(|| ApiError::Conflict("no adversary is available".to_owned()))?;
+        generate_operation(&OperationGenerationInput {
+            seed,
+            template_id: template.id.to_owned(),
+            adversary_id: adversary.to_owned(),
+            threat_level: request.requested_threat_level,
+            adversary_rank: rank_of(adversary),
+            hero_id: hero_id.clone(),
+        })
+        .map_err(|error| ApiError::BadRequest(error.to_string()))?
+    };
 
-    let adversary_rank = adversary_rows
-        .iter()
-        .find(|row| row.adversary_id == adversary)
-        .map(|row| adversary_rank_from_progress(row.progress))
-        .unwrap_or(1);
-
-    let seed = Uuid::new_v4().as_u128() as i64;
-    let operation = generate_operation(&OperationGenerationInput {
-        seed,
-        template_id: template.id.to_owned(),
-        adversary_id: adversary.to_owned(),
-        threat_level: request.requested_threat_level,
-        adversary_rank,
-        hero_id: hero_id.clone(),
-    })
-    .map_err(|error| ApiError::BadRequest(error.to_string()))?;
+    // Freeze run-start progression into the immutable Operation snapshot.
+    let mut operation = operation;
+    operation.progression_snapshot =
+        build_progression_snapshot(&mut tx, user.id, hero_id.as_deref()).await?;
 
     let config =
         serde_json::to_value(&operation).map_err(|error| ApiError::Internal(error.into()))?;
     let new_run = db::cyber_defense::NewOperationRun {
         id: Uuid::new_v4(),
         user_id: user.id,
-        seed,
+        seed: operation.seed,
         template_id: operation.template_id.as_str(),
         adversary_id: operation.adversary_id.as_str(),
         hero_id: hero_id.as_deref(),
@@ -4859,9 +5195,13 @@ pub async fn cyber_defense_start_operation(
         generated_config: &config,
     };
 
-    let run = match db::cyber_defense::create_operation_run(&mut conn, &new_run).await {
+    let run = match db::cyber_defense::create_operation_run(&mut tx, &new_run).await {
         Ok(run) => run,
         Err(error) if error.is_unique_violation() => {
+            // Roll back so a consumed offer is released, then report the
+            // blocking active run from a fresh connection.
+            tx.rollback().await.map_err(db::DbError::from)?;
+            let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
             return match db::cyber_defense::find_active_operation_run(&mut conn, user.id).await? {
                 Some(active) => Err(ApiError::ActiveOperationExists(active.id)),
                 None => Err(ApiError::Conflict("could not start operation".to_owned())),
@@ -4870,6 +5210,7 @@ pub async fn cyber_defense_start_operation(
         Err(error) => return Err(error.into()),
     };
 
+    tx.commit().await.map_err(db::DbError::from)?;
     operation_run_dto(&run)
 }
 
@@ -4900,27 +5241,6 @@ pub async fn cyber_defense_set_operation_loadout(
     run_id: Uuid,
     request: CyberOperationLoadoutRequest,
 ) -> Result<CyberOperationRunDto, ApiError> {
-    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
-    let lab_level =
-        db::cyber_defense::get_tower_upgrade_level(&mut conn, user.id, "engineering_lab").await?;
-    let allowance = if lab_level >= 2 {
-        2
-    } else if lab_level >= 1 {
-        1
-    } else {
-        0
-    };
-    if allowance == 0 {
-        return Err(ApiError::BadRequest(
-            "the Engineering Lab is not upgraded".to_owned(),
-        ));
-    }
-    if request.defense_swaps.len() > allowance {
-        return Err(ApiError::BadRequest(format!(
-            "at most {allowance} substitutions are allowed"
-        )));
-    }
-
     let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
     db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
     let run = db::cyber_defense::lock_operation_run(&mut tx, user.id, run_id)
@@ -4937,6 +5257,29 @@ pub async fn cyber_defense_set_operation_loadout(
                 "stored operation config is invalid: {error}"
             ))
         })?;
+
+    // The allowance is frozen at run creation: upgrading the Engineering Lab
+    // after a run starts must not widen that run's substitutions.
+    let lab_level = operation.progression_snapshot.tower.engineering_lab_level;
+    let allowance = if lab_level >= 2 {
+        2
+    } else if lab_level >= 1 {
+        1
+    } else {
+        0
+    };
+    if allowance == 0 {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::BadRequest(
+            "the Engineering Lab is not upgraded".to_owned(),
+        ));
+    }
+    if request.defense_swaps.len() > allowance {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::BadRequest(format!(
+            "at most {allowance} substitutions are allowed"
+        )));
+    }
 
     let mut available = operation.available_defenses.clone();
     for swap in &request.defense_swaps {
@@ -5089,6 +5432,26 @@ pub async fn cyber_defense_complete_operation(
         return duplicate_operation_response(state, user, &run, &profile).await;
     }
 
+    // Integrity guard: the browser simulation is never replayed server-side, so
+    // reject results that are impossible for the run's server age, and cap
+    // reward-bearing settlement frequency. Neither check blocks normal play.
+    let server_elapsed_ms = (Utc::now() - run.started_at).num_milliseconds().max(0);
+    if !operation_result_is_plausible(server_elapsed_ms, request.duration_ms) {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::BadRequest(
+            "result is not plausible for this run".to_owned(),
+        ));
+    }
+    let window_start = Utc::now() - Duration::minutes(OPERATION_RATE_WINDOW_MINUTES);
+    let settled =
+        db::cyber_defense::count_settled_operations_since(&mut tx, user.id, window_start).await?;
+    if settled >= OPERATION_RATE_MAX_SETTLED {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::Conflict(
+            "too many operations settled recently; try again later".to_owned(),
+        ));
+    }
+
     let operation: GeneratedOperation = serde_json::from_value(run.generated_config.clone())
         .map_err(|error| {
             ApiError::Internal(anyhow::anyhow!(
@@ -5111,12 +5474,14 @@ pub async fn cyber_defense_complete_operation(
     let first_boss_clear = completed && operation.boss && prior_victories == 0;
 
     let reward = operation_reward(run.threat_level, stars, completed, first_adversary_clear);
-    let training_level =
-        db::cyber_defense::get_tower_upgrade_level(&mut tx, user.id, "training_center").await?;
+    // The Training Center bonus uses the level frozen at run creation, so
+    // upgrading the room mid-run affects only future Operations.
     let hero_xp = if run.hero_id.is_some() {
         scale_xp(
             reward.hero_xp,
-            training_center_hero_xp_multiplier(training_level),
+            training_center_hero_xp_multiplier(
+                operation.progression_snapshot.tower.training_center_level,
+            ),
         )
     } else {
         0
@@ -5308,22 +5673,48 @@ pub async fn cyber_defense_import_legacy(
         });
     }
 
+    // Only a contiguous prefix of the canonical campaign order is imported.
+    // Local progress is untrusted, so a client cannot claim the boss (or skip
+    // missions) to unlock Operations or claim campaign rewards out of order.
+    // Imported completions are also marked reward-settled so they can never
+    // claim a first-clear reward later.
+    let existing = db::cyber_defense::list_campaign_results(&mut tx, user.id).await?;
+    let completed_in_db = |mission_id: &str| {
+        existing
+            .iter()
+            .any(|row| row.mission_id == mission_id && row.completed)
+    };
+
     let mut missions_imported = 0i32;
     let mut any_completed = false;
-    for (mission_id, mission) in &request.missions {
-        if !is_campaign_mission(mission_id) {
-            continue;
+    let mut prefix_open = true;
+    for mission_id in CAMPAIGN_ORDER {
+        if !prefix_open {
+            break;
         }
-        let stars = mission.stars.clamp(0, 3);
-        let health = mission.best_health.clamp(0, CYBER_MAX_HEALTH);
-        let attempts = mission.attempts.clamp(0, 10_000);
-        let completed = mission.completed && stars > 0;
-        any_completed |= completed;
-        db::cyber_defense::import_campaign_result(
-            &mut tx, user.id, mission_id, completed, stars, health, attempts,
-        )
-        .await?;
-        missions_imported += 1;
+        let already_completed = completed_in_db(mission_id);
+        match request.missions.get(*mission_id) {
+            Some(mission) => {
+                let stars = mission.stars.clamp(0, 3);
+                let health = mission.best_health.clamp(0, CYBER_MAX_HEALTH);
+                let attempts = mission.attempts.clamp(0, 10_000);
+                let completed = mission.completed && stars > 0;
+                any_completed |= completed;
+                db::cyber_defense::import_campaign_result(
+                    &mut tx, user.id, mission_id, completed, stars, health, attempts,
+                )
+                .await?;
+                missions_imported += 1;
+                if !completed && !already_completed {
+                    prefix_open = false;
+                }
+            }
+            None => {
+                if !already_completed {
+                    prefix_open = false;
+                }
+            }
+        }
     }
 
     let imported = db::cyber_defense::mark_legacy_progress_imported(&mut tx, user.id).await?;

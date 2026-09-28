@@ -111,6 +111,7 @@ export default function CyberDashboard() {
     async (choice: {
       heroId: string;
       threatLevel: number;
+      offerId?: string;
       templateId?: string;
     }) => {
       if (!profile) {
@@ -126,6 +127,7 @@ export default function CyberDashboard() {
       const result = await startOperation({
         requested_threat_level: choice.threatLevel,
         hero_id: choice.heroId,
+        offer_id: choice.offerId,
         template_id: choice.templateId,
       });
       if (result.ok) {

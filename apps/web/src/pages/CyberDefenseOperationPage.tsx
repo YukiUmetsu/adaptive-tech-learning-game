@@ -17,6 +17,7 @@ import {
   resilienceEmergencyRecovery,
   resiliencePostmortemIntel,
   engineeringLabSwapAllowance,
+  towerProgressFromSnapshot,
   towerProgressFromUpgrades,
 } from "../game/data/towerEffects";
 import { useFrozenHeroTalents } from "../game/hooks/useFrozenHeroTalents";
@@ -81,11 +82,22 @@ export default function CyberDefenseOperationPage() {
     };
   }, [runId]);
 
-  const talents = useFrozenHeroTalents(profile?.heroes);
-  const towerProgress = useMemo(
-    () => towerProgressFromUpgrades(profile?.tower_upgrades),
-    [profile],
-  );
+  // Run-affecting progression comes from the immutable run snapshot, not the
+  // current profile: a talent respec or Tower upgrade elsewhere must never
+  // change a run already in progress. Legacy runs without a snapshot fall back
+  // to the profile.
+  const frozenHero = run
+    ? run.operation.progression_snapshot?.hero
+      ? [run.operation.progression_snapshot.hero]
+      : profile?.heroes
+    : undefined;
+  const talents = useFrozenHeroTalents(frozenHero);
+  const towerProgress = useMemo(() => {
+    const snapshot = run?.operation.progression_snapshot?.tower;
+    return snapshot
+      ? towerProgressFromSnapshot(snapshot)
+      : towerProgressFromUpgrades(profile?.tower_upgrades);
+  }, [run, profile]);
 
   const mission = useMemo(
     () =>

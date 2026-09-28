@@ -38,6 +38,9 @@ pub enum ApiError {
     /// The requested story-gated Operation is not unlocked yet.
     #[error("this Operation is not unlocked yet")]
     CyberOperationLocked,
+    /// The campaign mission's prerequisite has not been completed.
+    #[error("complete the previous campaign mission first")]
+    CyberCampaignMissionLocked,
     /// The mission references content that no longer exists because the
     /// certification content changed after the mission was issued.
     ///
@@ -66,6 +69,7 @@ impl ApiError {
             Self::ActiveOperationExists(_) => StatusCode::CONFLICT,
             Self::CyberOperationsLocked => StatusCode::FORBIDDEN,
             Self::CyberOperationLocked => StatusCode::FORBIDDEN,
+            Self::CyberCampaignMissionLocked => StatusCode::FORBIDDEN,
             Self::MissionStale => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -84,6 +88,7 @@ impl ApiError {
             Self::ActiveOperationExists(_) => "active_operation_exists",
             Self::CyberOperationsLocked => "cyber_operations_locked",
             Self::CyberOperationLocked => "cyber_operation_locked",
+            Self::CyberCampaignMissionLocked => "cyber_campaign_mission_locked",
             Self::MissionStale => "mission_content_stale",
             Self::Unavailable => "unavailable",
             Self::Internal(_) => "internal_error",
@@ -95,6 +100,7 @@ impl ApiError {
             Self::Internal(_) => "internal server error",
             Self::CyberOperationsLocked => "Complete Chapter 1 before starting Operations.",
             Self::CyberOperationLocked => "This Operation is not unlocked yet.",
+            Self::CyberCampaignMissionLocked => "Complete the previous campaign mission first.",
             Self::MissionStale => {
                 "this study mission was created from an older content version; start a new mission"
             }

@@ -51,6 +51,7 @@ function baseProfile(heroes: CyberHeroProgress[]): CyberProfile {
     operations_unlocked: false,
     confrontation_available: false,
     available_adversaries: [],
+    cosmetics: [],
   };
 }
 

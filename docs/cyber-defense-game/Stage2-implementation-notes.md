@@ -39,9 +39,9 @@ hero, Tower, adversary, dossier, and story progression, all server-authoritative
 | POST | `/v1/cyber-defense/legacy-progress` |
 | POST | `/v1/cyber-defense/telemetry` |
 
-`POST /v1/cyber-defense/upgrades` (in-run upgrade spending) is left mounted for
-compatibility but is no longer called by the Stage 2 frontend; in-run upgrades
-now use mission credits only (Step 4).
+`POST /v1/cyber-defense/upgrades` (in-run upgrade spending) was removed in the
+Stage 2.2 pass: no supported client called it, in-run upgrades use mission
+credits only, and its frontend flush queue was dead code. See "Stage 2.2" below.
 
 ### Migrations
 
@@ -271,4 +271,244 @@ cd apps/web
 E2E_DATABASE_URL=postgres://app:app@127.0.0.1:55432/app pnpm e2e
 ```
 
+The config reuses servers already listening on 5173/8080 by default. If a normal
+(non-dev-auth) dev server is running there, run E2E on isolated ports so it
+starts its own dev-auth servers:
 
+```bash
+E2E_DATABASE_URL=postgres://app:app@127.0.0.1:55432/app \
+E2E_API_PORT=8099 E2E_WEB_PORT=5199 pnpm e2e
+```
+
+
+
+---
+
+# Stage 2.2 — Integrity + Replayability Pass
+
+This pass made existing Cyber Defense systems more trustworthy, replayable, and
+strategically interesting. It did **not** add another game mode, daily systems,
+PvP, energy, gacha, or more heroes/attacks.
+
+## What was implemented
+
+### 1. Immutable, reproducible Operations (run snapshot)
+
+Every Operation now stores a `progression_snapshot` inside its immutable
+`generated_config`:
+
+```jsonc
+"progression_snapshot": {
+  "hero": { "hero_id": "security_engineer", "level": 12, "selected_talents": { "5": "rapid_response" } },
+  "tower": {
+    "soc_level": 2,
+    "threat_intelligence_level": 0,
+    "training_center_level": 1,
+    "engineering_lab_level": 1,
+    "resilience_center_level": 0
+  }
+}
+```
+
+- `POST /v1/cyber-defense/operations` (and the offer path) build the snapshot
+  once from the selected hero's progress/talents and the five Tower room levels,
+  and persist it with the run.
+- The **server** uses the snapshot at settlement (Training Center hero-XP
+  multiplier) and at loadout time (Engineering Lab allowance).
+- The **browser** resolves hero talents, SOC/Threat-Intel briefing visibility,
+  Resilience recovery/postmortem, and swap allowance from the run snapshot, not
+  the current profile. A respec or Tower upgrade after a run starts affects only
+  future runs.
+- Runs persisted before this pass (no snapshot field) still deserialize, thanks
+  to `#[serde(default)]`; the frontend falls back to the profile for those.
+
+### 2. Server-side campaign order
+
+- Canonical order lives in `crates/domain/src/cyber_defense.rs`:
+  `ddos-basics → sql-injection → credential-stuffing → mixed-defense →
+  botnet-boss` (`CAMPAIGN_ORDER`, `campaign_prerequisite`,
+  `campaign_mission_unlocked`).
+- `POST /v1/cyber-defense/campaign/{mission_id}/complete` rejects a locked
+  mission with `403 cyber_campaign_mission_locked`, before any reward is derived.
+- `campaign_complete` now requires the **whole chain**, not just the final
+  mission, which closes the final-mission-only hole where a client could claim
+  only `botnet-boss` and unlock Operations.
+- Legacy import is hardened too: it accepts only a **contiguous prefix** of the
+  canonical order (walking `CAMPAIGN_ORDER` and stopping at the first gap or
+  uncompleted mission), so a client cannot skip or import the boss alone. An
+  imported completion is recorded as `first_clear_reward_settled`, so imported
+  progress can never claim a first-clear reward later; it still grants only the
+  fixed returning-defender career XP and no Bits. (Legacy progress remains
+  inherently client-reported, so a fully fabricated contiguous chain can still
+  migrate — it skips the tutorial but earns no retroactive currency.)
+
+### 3. Settlement integrity (no server-side simulation)
+
+- **Server-elapsed floor:** a run cannot settle before
+  `OPERATION_MIN_ELAPSED_MS` (20 s) of server wall-clock time has passed.
+- **Claimed-duration check:** `claimed_duration ≤ server_elapsed +
+  OPERATION_DURATION_TOLERANCE_MS` (120 s). A long pause/resume is always fine.
+- **Rate guard:** at most `OPERATION_RATE_MAX_SETTLED` (30) reward settlements
+  per `OPERATION_RATE_WINDOW_MINUTES` (60) per learner; a real Operation takes
+  minutes, so normal play is never blocked.
+- Duplicate settlement stays idempotent (run-status guard) and cross-user
+  settlement stays a 404.
+
+### 4. Anti-repetition Operation selection
+
+- `select_operation_template` (domain, deterministic) avoids the last two
+  distinct template ids when alternatives exist, then avoids the immediately
+  previous template when possible, and falls back to the whole eligible pool
+  when only one template is eligible.
+- The story confrontation never enters the random or offer pools.
+
+### 5. Operation offers (`POST /v1/cyber-defense/operations/offers`)
+
+- Returns up to three eligible offers, each with `offer_id`, template, title,
+  adversary, estimated minutes, map, threat summary, and a reward preview at the
+  requested (or recommended) Threat Level.
+- Offers are **persisted** (`cyber_operation_offers`) and reused until they
+  expire (30 min) or are consumed, so a re-render or second tab sees the same
+  choices. The offer id doubles as the deterministic run seed.
+- `POST /v1/cyber-defense/operations` accepts `offer_id`; the server starts
+  exactly that offered template/adversary. Offer consumption and run creation
+  happen in one transaction, so a failed start rolls the offer back and releases
+  it instead of silently removing the player's choice. Ordinary templates can no
+  longer be pinned directly (`400`), which closes the arbitrary-locked-template
+  hole.
+- The dashboard renders the offers, keeps one selected by default, and falls
+  back to a single server-selected Operation if the offers endpoint is
+  unreachable.
+
+### 6. Threat Level choice for the confrontation
+
+The operation chooser now shows Threat Level chips for the confrontation too.
+The server validates the choice against the learner's unlocked level for every
+start, so a lower, recommended, or higher unlocked level all work.
+
+### 7. Branching Operation maps
+
+Three new topologies join the catalog (`crates/domain/src/cyber_operation.rs`
+and `apps/web/src/game/data/operationMaps.ts`):
+
+- `dual-service` — API and application on parallel branches into the database.
+- `identity-fork` — identity layer splits to the application and database.
+- `service-mesh` — the edge reaches the API or the database directly.
+
+Pre-existing templates now use them (`identity-breach → identity-fork`,
+`web-assault → dual-service`, `availability-siege → service-mesh`). A parity test
+asserts the Rust and TypeScript map-id sets match exactly, and generator
+invariants are exercised on every map.
+
+### 8. Tower Themes (permanent non-power Bits sink)
+
+- Five themes (`neon-blue`, `amber-soc`, `violet-grid`, `minimal-dark`,
+  `red-alert`), priced 180–1200 Bits, with **no gameplay effect**.
+- `POST /v1/cyber-defense/cosmetics/{cosmetic_id}/purchase` charges Bits through
+  the existing wallet ledger and is idempotent (a retry or a re-purchase of an
+  owned theme charges nothing). `PUT /v1/cyber-defense/cosmetics/equipped`
+  equips an owned theme or clears it.
+- `GET /v1/cyber-defense/profile` returns `cosmetics` (owned/equipped) and
+  `equipped_theme`; the Tower page has an **Appearance** section.
+
+### 9. Legacy temporary-upgrade API removed
+
+`POST /v1/cyber-defense/upgrades` (route, service, DTOs, OpenAPI entries) was
+removed, along with the now-dead client spend queue (`state/bitSpends.ts`). The
+shared wallet ledger infrastructure is unchanged.
+
+## Files changed (high level)
+
+- Domain: `cyber_defense.rs` (campaign order, integrity constants, cosmetics),
+  `cyber_operation.rs` (snapshot types, branching maps, anti-repetition,
+  offers, duration estimate, required-counter validation), `lib.rs` exports.
+- DB: `migrations/20261003000005_cyber_integrity_replayability.{up,down}.sql`,
+  `cyber_defense.rs` (offers, cosmetics, settled-count, recent identities,
+  equipped theme).
+- API: `services.rs`, `dto.rs`, `error.rs`, `openapi.rs`,
+  `routes/cyber_defense.rs`, `lib.rs`.
+- Web: `game/state/cyberProfile.ts`, `game/data/operationMaps.ts`,
+  `game/data/towerEffects.ts`, `game/components/dashboard/OperationSetup.tsx`,
+  `game/components/dashboard/CyberDashboard.tsx`,
+  `pages/CyberDefenseOperationPage.tsx`, `pages/CyberDefenseTowerPage.tsx`,
+  `layout/AppShell.tsx`, `styles.css`, generated `openapi.json` /
+  `src/api/schema.d.ts`.
+
+## Migrations
+
+- `20261003000005_cyber_integrity_replayability` — `cyber_operation_offers`,
+  `cyber_cosmetic_unlocks`, and `cyber_defense_profiles.equipped_theme`.
+
+## New / changed APIs
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/v1/cyber-defense/operations/offers` | Stable offer set (up to 3) |
+| POST | `/v1/cyber-defense/operations` | Accepts `offer_id`; ordinary `template_id` pinning rejected |
+| POST | `/v1/cyber-defense/cosmetics/{cosmetic_id}/purchase` | Idempotent Bits purchase |
+| PUT | `/v1/cyber-defense/cosmetics/equipped` | Equip/clear an owned theme |
+| GET | `/v1/cyber-defense/profile` | Adds `cosmetics`, `equipped_theme` |
+| POST | `/v1/cyber-defense/campaign/{mission_id}/complete` | Enforces prerequisites |
+| (removed) | `POST /v1/cyber-defense/upgrades` | Deleted with its client queue |
+
+New error code: `cyber_campaign_mission_locked` (403).
+
+## Tests added
+
+- Domain: campaign order/prerequisites and full-chain completion, operation
+  elapsed-plausibility bounds, anti-repetition (avoid last 2, single-template
+  fallback, offer variety), branching-map parity/reachability, snapshot
+  round-trip, cosmetics catalog.
+- API: campaign order enforcement; offers stable/startable/invalid; offers
+  require campaign; snapshot freezes SOC + Training Center; Engineering Lab
+  allowance frozen; cosmetics purchase/equip/idempotency/insufficient; rate
+  guard; legacy upgrade route gone; immediate settlement rejected; legacy import
+  requires a contiguous prefix and an imported completion cannot claim a
+  first-clear reward.
+- DB: offer consumption rolls back with its transaction (so a failed start
+  releases the offer).
+- Web: map catalog parity + reachability; `towerProgressFromSnapshot`; offer
+  selection sends `offerId`; confrontation keeps a chooseable Threat Level.
+
+## Test results
+
+- `cargo fmt --check` — clean.
+- `cargo clippy --all-targets --all-features -- -D warnings` — clean.
+- `cargo test --no-fail-fast` (local Postgres) — 44 test binaries pass; the only
+  two failures are the same pre-existing, unrelated ones documented above
+  (`daily_missions::completing_every_item_awards_the_bonus_exactly_once` and
+  `family_guide::tracks_without_guides_still_load`). `adaptive-learn-domain` is
+  94 tests; the Cyber Defense API suite is 34 tests and the Cyber Defense DB
+  suite is 10 tests.
+- `cd apps/web && pnpm typecheck` — pass.
+- `cd apps/web && pnpm lint` — 0 errors (2 pre-existing `QuestionPrompt`
+  warnings).
+- `cd apps/web && pnpm test` — 136 files, 1095 tests pass.
+- `cd apps/web && pnpm build` — pass.
+- `cd apps/web && E2E_DATABASE_URL=… E2E_API_PORT=8099 E2E_WEB_PORT=5199 pnpm e2e`
+  — 11 tests pass (Chromium), including the Cyber Defense offer/deploy flow and
+  a run settled through the real API after aging past the integrity floor.
+
+## Intentionally deferred
+
+- **Cross-device story acknowledgement.** Completion is already
+  server-authoritative; acknowledgement remains device-local
+  (`game/persistence/storyAck.ts`). The planned schema is
+  `cyber_story_acknowledgements(user_id, story_node_id, acknowledged_at)` with a
+  `POST /v1/cyber-defense/story/{node_id}/acknowledge` endpoint that verifies the
+  node is already unlocked and is idempotent, keeping the local value as an
+  offline fallback that retries. This is lower priority than the integrity and
+  choice work above.
+- **Accelerated browser-combat E2E.** The existing E2E settles an Operation
+  through the real API after aging the run past the integrity floor; it does not
+  yet play the battle. A dev/E2E-only accelerated fixture (shorter render
+  interval in `useGameEngine`, env-gated so production is unaffected) plus a
+  pause-to-age step would let a test place defenses, start a wave, pause past
+  20 s, resume at high speed, win, and assert the real settlement. Deferred to
+  keep CI fast and avoid a flaky ~1–2 minute test.
+- **Server-issued campaign run IDs.** Campaign completion still accepts
+  client-reported result evidence (with server-derived rewards, prerequisite
+  enforcement, idempotent `result_id`s, duration bounds, and the rate guard).
+  Issuing server-side campaign run identities
+  (`POST /v1/cyber-defense/campaign/{mission_id}/runs`) remains the known
+  integrity limitation.

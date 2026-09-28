@@ -233,11 +233,13 @@ Reason:
 - The game remains a strategy puzzle.
 - Bits remain a platform progression reward.
 
-> **Implementation note.** Control *placement* uses mission credits, as above.
-> *Upgrading* a deployed control spends persistent Bits, settled
-> server-side and idempotently (`POST /v1/cyber-defense/upgrades`) and requiring
-> an account. This keeps a retry free while giving platform progression a sink;
-> see the Spending section of [Gamification](07-gamification.md).
+> **Implementation note.** Control *placement* and in-run *upgrading* both use
+> mission credits, so a retry costs no permanent currency. Persistent Bits sank
+> into Tower/HQ rooms and Tower Themes are settled server-side and idempotently
+> through the wallet ledger; see the Spending section of
+> [Gamification](07-gamification.md) and the Stage 2 notes. The earlier
+> per-control Bits upgrade endpoint (`POST /v1/cyber-defense/upgrades`) was
+> removed once in-run upgrades moved to mission credits.
 
 ---
 

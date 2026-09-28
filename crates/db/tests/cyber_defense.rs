@@ -373,3 +373,71 @@ async fn dossier_flags_union_without_duplicates() {
     drop(conn);
     cleanup(&pool, user_id).await;
 }
+
+#[tokio::test]
+async fn operation_offer_consumption_rolls_back_with_the_transaction() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+    let user_id = insert_user(&pool).await;
+
+    let mut conn = pool.acquire().await.expect("acquire");
+    db::cyber_defense::get_or_create_profile(&mut conn, user_id)
+        .await
+        .expect("create profile");
+
+    let offer_id = Uuid::new_v4();
+    let expires_at = chrono::Utc::now() + chrono::Duration::minutes(30);
+    db::cyber_defense::insert_operation_offers(
+        &mut conn,
+        &[db::cyber_defense::NewOperationOffer {
+            id: offer_id,
+            user_id,
+            seed: 7,
+            template_id: "identity-breach",
+            adversary_id: "ghost-7",
+            adversary_rank: 1,
+            expires_at,
+        }],
+    )
+    .await
+    .expect("insert offer");
+    drop(conn);
+
+    // Consuming inside a transaction that rolls back must release the offer.
+    {
+        let mut tx = pool.begin().await.expect("begin");
+        let consumed = db::cyber_defense::consume_operation_offer(&mut tx, user_id, offer_id)
+            .await
+            .expect("consume");
+        assert!(consumed.is_some());
+        tx.rollback().await.expect("rollback");
+    }
+
+    let mut conn = pool.acquire().await.expect("acquire");
+    let active = db::cyber_defense::list_active_operation_offers(&mut conn, user_id)
+        .await
+        .expect("list active");
+    assert_eq!(
+        active.len(),
+        1,
+        "rolled-back consumption releases the offer"
+    );
+
+    // A committed consumption removes it from the active set.
+    {
+        let mut tx = pool.begin().await.expect("begin");
+        let consumed = db::cyber_defense::consume_operation_offer(&mut tx, user_id, offer_id)
+            .await
+            .expect("consume");
+        assert!(consumed.is_some());
+        tx.commit().await.expect("commit");
+    }
+    let active = db::cyber_defense::list_active_operation_offers(&mut conn, user_id)
+        .await
+        .expect("list active");
+    assert!(active.is_empty(), "committed consumption is durable");
+
+    drop(conn);
+    cleanup(&pool, user_id).await;
+}

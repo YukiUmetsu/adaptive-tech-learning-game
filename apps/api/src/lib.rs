@@ -129,12 +129,16 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         .route("/v1/sync", post(routes::sync::sync))
         .route("/v1/wallet", get(routes::wallet::get_wallet))
         .route(
-            "/v1/cyber-defense/upgrades",
-            post(routes::cyber_defense::spend_upgrade),
-        )
-        .route(
             "/v1/cyber-defense/profile",
             get(routes::cyber_defense::get_profile),
+        )
+        .route(
+            "/v1/cyber-defense/cosmetics/{cosmetic_id}/purchase",
+            post(routes::cyber_defense::purchase_cosmetic),
+        )
+        .route(
+            "/v1/cyber-defense/cosmetics/equipped",
+            put(routes::cyber_defense::equip_cosmetic),
         )
         .route(
             "/v1/cyber-defense/campaign/{mission_id}/complete",
@@ -147,6 +151,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         .route(
             "/v1/cyber-defense/heroes/{hero_id}/talents",
             put(routes::cyber_defense::set_hero_talents),
+        )
+        .route(
+            "/v1/cyber-defense/operations/offers",
+            post(routes::cyber_defense::operation_offers),
         )
         .route(
             "/v1/cyber-defense/operations",
